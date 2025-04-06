@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    
+        <script>
+            L_NO_TOUCH = false;
+            L_DISABLE_3D = false;
+        </script>
+    
+    <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
+    <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_bcd47f64c88a861aa414dad1511ba5a7 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+        
+</head>
+<body>
+    
+    
+            <div class="folium-map" id="map_bcd47f64c88a861aa414dad1511ba5a7" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_bcd47f64c88a861aa414dad1511ba5a7 = L.map(
+                "map_bcd47f64c88a861aa414dad1511ba5a7",
+                {
+                    center: [37.7749, -122.4194],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 11,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_6e33357f2b28613a6d92753db4c4d41b = L.tileLayer(
+                "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 20,
+  "maxNativeZoom": 20,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors \u0026copy; \u003ca href=\"https://carto.com/attributions\"\u003eCARTO\u003c/a\u003e",
+  "subdomains": "abcd",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_6e33357f2b28613a6d92753db4c4d41b.addTo(map_bcd47f64c88a861aa414dad1511ba5a7);
+        
+    
+            var feature_group_0f646e230b6e49eae3f8a584e51e7ab5 = L.featureGroup(
+                {
+}
+            );
+        
+    
+            var circle_a182db642ae193725d2381a1a9d33b53 = L.circle(
+                [37.7749, -122.4194],
+                {"bubblingMouseEvents": true, "color": "#FF0000", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#FF0000", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 2000, "stroke": true, "weight": 3}
+            ).addTo(feature_group_0f646e230b6e49eae3f8a584e51e7ab5);
+        
+    
+        var popup_6dcb7d8c237027608247f2d95224b919 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_decb91635f97eb1bd5dbe1813c60b6d6 = $(`<div id="html_decb91635f97eb1bd5dbe1813c60b6d6" style="width: 100.0%; height: 100.0%;">                 <div style="width:200px">                     <h4>Downtown 5G Ultra</h4>                     <p>Type: 5G Ultra Wideband</p>                     <p>Status: Operational</p>                     <p>Signal: 95%</p>                     <p>Load: 78%</p>                 </div>             </div>`)[0];
+                popup_6dcb7d8c237027608247f2d95224b919.setContent(html_decb91635f97eb1bd5dbe1813c60b6d6);
+            
+        
+
+        circle_a182db642ae193725d2381a1a9d33b53.bindPopup(popup_6dcb7d8c237027608247f2d95224b919)
+        ;
+
+        
+    
+    
+            var circle_marker_222cd969b0d54ebac304427064c36aa8 = L.circleMarker(
+                [37.7749, -122.4194],
+                {"bubblingMouseEvents": true, "color": "#FF0000", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#FF0000", "fillOpacity": 1, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(feature_group_0f646e230b6e49eae3f8a584e51e7ab5);
+        
+    
+        var popup_c580a200401cf0fb76929abfa14b0159 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_0e735a14ab5cefa58eea41087b51a2d4 = $(`<div id="html_0e735a14ab5cefa58eea41087b51a2d4" style="width: 100.0%; height: 100.0%;">Downtown 5G Ultra</div>`)[0];
+                popup_c580a200401cf0fb76929abfa14b0159.setContent(html_0e735a14ab5cefa58eea41087b51a2d4);
+            
+        
+
+        circle_marker_222cd969b0d54ebac304427064c36aa8.bindPopup(popup_c580a200401cf0fb76929abfa14b0159)
+        ;
+
+        
+    
+    
+            var circle_916407e09ef2181ca4fcb331d366a74d = L.circle(
+                [37.7575, -122.4376],
+                {"bubblingMouseEvents": true, "color": "#FF0000", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#FF0000", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 2000, "stroke": true, "weight": 3}
+            ).addTo(feature_group_0f646e230b6e49eae3f8a584e51e7ab5);
+        
+    
+        var popup_c6d451dbdb55f5252c4375b895b51d7d = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_3c461f811c4d9dfe9e335ad7ffde3492 = $(`<div id="html_3c461f811c4d9dfe9e335ad7ffde3492" style="width: 100.0%; height: 100.0%;">                 <div style="width:200px">                     <h4>Heights Tower</h4>                     <p>Type: 5G Ultra Wideband</p>                     <p>Status: Critical</p>                     <p>Signal: 65%</p>                     <p>Load: 45%</p>                 </div>             </div>`)[0];
+                popup_c6d451dbdb55f5252c4375b895b51d7d.setContent(html_3c461f811c4d9dfe9e335ad7ffde3492);
+            
+        
+
+        circle_916407e09ef2181ca4fcb331d366a74d.bindPopup(popup_c6d451dbdb55f5252c4375b895b51d7d)
+        ;
+
+        
+    
+    
+            var circle_marker_f2201dc28de1eeba20df6a03fc374def = L.circleMarker(
+                [37.7575, -122.4376],
+                {"bubblingMouseEvents": true, "color": "#FF0000", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#FF0000", "fillOpacity": 1, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(feature_group_0f646e230b6e49eae3f8a584e51e7ab5);
+        
+    
+        var popup_80c8f675e0ef59ea9675bfacc153dc98 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_6c004854919c9739c64468889f438e45 = $(`<div id="html_6c004854919c9739c64468889f438e45" style="width: 100.0%; height: 100.0%;">Heights Tower</div>`)[0];
+                popup_80c8f675e0ef59ea9675bfacc153dc98.setContent(html_6c004854919c9739c64468889f438e45);
+            
+        
+
+        circle_marker_f2201dc28de1eeba20df6a03fc374def.bindPopup(popup_80c8f675e0ef59ea9675bfacc153dc98)
+        ;
+
+        
+    
+    
+            feature_group_0f646e230b6e49eae3f8a584e51e7ab5.addTo(map_bcd47f64c88a861aa414dad1511ba5a7);
+        
+    
+            var feature_group_2cbddb97b039cdf4107278cfa2881f01 = L.featureGroup(
+                {
+}
+            );
+        
+    
+            var circle_1a6d4c5cf7ae9982ff2c74f731b87894 = L.circle(
+                [37.8079, -122.4012],
+                {"bubblingMouseEvents": true, "color": "#FF6B6B", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#FF6B6B", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 5000, "stroke": true, "weight": 3}
+            ).addTo(feature_group_2cbddb97b039cdf4107278cfa2881f01);
+        
+    
+        var popup_0023b7ccc2a0b0692f27e61f1d9d213d = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_ca664ad595c213b2643798b47c45cfc3 = $(`<div id="html_ca664ad595c213b2643798b47c45cfc3" style="width: 100.0%; height: 100.0%;">                 <div style="width:200px">                     <h4>Harbor View 5G</h4>                     <p>Type: 5G Edge</p>                     <p>Status: Warning</p>                     <p>Signal: 82%</p>                     <p>Load: 92%</p>                 </div>             </div>`)[0];
+                popup_0023b7ccc2a0b0692f27e61f1d9d213d.setContent(html_ca664ad595c213b2643798b47c45cfc3);
+            
+        
+
+        circle_1a6d4c5cf7ae9982ff2c74f731b87894.bindPopup(popup_0023b7ccc2a0b0692f27e61f1d9d213d)
+        ;
+
+        
+    
+    
+            var circle_marker_f2e8bcb8f7669d32d81f00dc11072ad8 = L.circleMarker(
+                [37.8079, -122.4012],
+                {"bubblingMouseEvents": true, "color": "#FF6B6B", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#FF6B6B", "fillOpacity": 1, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(feature_group_2cbddb97b039cdf4107278cfa2881f01);
+        
+    
+        var popup_d9fc6d208fc01650dc0e3e15571ad80c = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_e4e67dc5592ef78c6aca71c2223e266b = $(`<div id="html_e4e67dc5592ef78c6aca71c2223e266b" style="width: 100.0%; height: 100.0%;">Harbor View 5G</div>`)[0];
+                popup_d9fc6d208fc01650dc0e3e15571ad80c.setContent(html_e4e67dc5592ef78c6aca71c2223e266b);
+            
+        
+
+        circle_marker_f2e8bcb8f7669d32d81f00dc11072ad8.bindPopup(popup_d9fc6d208fc01650dc0e3e15571ad80c)
+        ;
+
+        
+    
+    
+            feature_group_2cbddb97b039cdf4107278cfa2881f01.addTo(map_bcd47f64c88a861aa414dad1511ba5a7);
+        
+    
+            var layer_control_a0d36b9d0a120ce5038c13e0653dbe30_layers = {
+                base_layers : {
+                    "cartodbdarkmatter" : tile_layer_6e33357f2b28613a6d92753db4c4d41b,
+                },
+                overlays :  {
+                    "5G Ultra Wideband" : feature_group_0f646e230b6e49eae3f8a584e51e7ab5,
+                    "5G Edge" : feature_group_2cbddb97b039cdf4107278cfa2881f01,
+                },
+            };
+            let layer_control_a0d36b9d0a120ce5038c13e0653dbe30 = L.control.layers(
+                layer_control_a0d36b9d0a120ce5038c13e0653dbe30_layers.base_layers,
+                layer_control_a0d36b9d0a120ce5038c13e0653dbe30_layers.overlays,
+                {
+  "position": "topright",
+  "collapsed": true,
+  "autoZIndex": true,
+}
+            ).addTo(map_bcd47f64c88a861aa414dad1511ba5a7);
+
+        
+</script>
+</html>

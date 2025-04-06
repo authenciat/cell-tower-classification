@@ -1,385 +1,1123 @@
 import gradio as gr
-import cv2
+import torch
+from model import TowerClassifier
+from ultralytics import YOLO
+import folium
+from PIL import Image
 import numpy as np
+from torchvision import transforms
+import cv2
 import os
+from antenna_detector import AntennaDetector
+from datetime import datetime
 import json
-import traceback
-import glob
-from pathlib import Path
-import tempfile
-from typing import Tuple, Dict, List
+import requests
 
-# Use absolute imports for local modules
-from src.detection import TowerDetector
-from src.tower_analyzer import TowerAnalyzer
-from src.visualization import Visualizer
-from src.utils import VideoProcessor
-
-# Determine the base directory and file paths
-base_dir = Path(os.path.join(os.getcwd(), "UTD-Models-Videos"))
-print(f"Using base directory: {base_dir}")
-
-# Direct paths to the required files
-weights_path = Path("UTD-Models-Videos/weights/yolov3.weights")
-config_path = base_dir / "cfg" / "yolov3.cfg"
-names_path = base_dir / "data" / "coco.names"
-# Update to the correct path where model was found
-antenna_model_path = base_dir / "runs" / "detect" / "train4" / "weights" / "best.pt"
-
-# Check if files exist
-if not weights_path.exists():
-    print(f"Warning: Weight file not found at {weights_path}")
-    print("Trying relative path...")
-    weights_path = base_dir / "weights" / "yolov3.weights"
-    if not weights_path.exists():
-        print(f"Warning: Weight file still not found at {weights_path}")
-
-if not config_path.exists():
-    print(f"Warning: Config file not found at {config_path}")
-
-if not names_path.exists():
-    print(f"Warning: Names file not found at {names_path}")
-
-if not antenna_model_path.exists():
-    print(f"Warning: Antenna model file not found at {antenna_model_path}")
-    # Try alternate path as a fallback
-    alt_path = Path("UTD-Models-Videos/runs/detect/train4/weights/best.pt")
-    if alt_path.exists():
-        antenna_model_path = alt_path
-        print(f"Found model at alternate path: {antenna_model_path}")
-    else:
-        print(f"Warning: Alternate model path not found either: {alt_path}")
-
-# Initialize detector and analyzer
-print("Initializing tower detector...")
-try:
-    detector = TowerDetector(
-        model_path=str(antenna_model_path),
-        confidence_threshold=0.4
-    )
-    print("Initialized tower detector")
-    
-    analyzer = TowerAnalyzer()
-    print("Initialized tower analyzer")
-    
-    visualizer = Visualizer()
-    print("Initialized visualizer")
-    
-    video_processor = VideoProcessor(detector, analyzer, visualizer)
-    print("Initialized video processor")
-except Exception as e:
-    print(f"Error initializing models: {e}")
-    traceback.print_exc()
-    raise
-
-def process_image(image, confidence=0.4):
-    """Process the uploaded image for tower detection"""
-    if image is None:
-        return "Please upload an image", None
-        
-    # Adjust confidence threshold
-    detector.confidence_threshold = confidence
-    
-    # Detect towers in the image
-    detections, _ = detector.detect(image)
-    
-    # Analyze the detections
-    analysis_results = analyzer.analyze(detections, image)
-    
-    # Create visualization
-    result_image = visualizer.draw_tower_analysis(image, detections, analysis_results)
-    
-    # Format results as text
-    text_results = format_analysis_results(analysis_results)
-    
-    return text_results, result_image
-
-def process_video(video, confidence=0.4):
-    """Process the uploaded video for tower detection"""
-    if video is None:
-        return "Please upload a video", None, None
-    
-    # Adjust confidence threshold
-    detector.confidence_threshold = confidence
-    
-    # Create temporary output file
-    output_file = "output_video.mp4"
-    
-    # Process the video
+def get_weather_data(lat, lon):
     try:
-        results = video_processor.process_video(
-            video_path=video,
-            output_path=output_file,
-            analyze=True
-        )
-        
-        # Collect all frame analyses to combine them
-        frame_analyses = []
-        all_frame_results = {}
-        
-        for i, frame_result in enumerate(results.get("detections", [])):
-            if frame_result.get("analysis"):
-                frame_analyses.append(frame_result["analysis"])
-                # Store the frame index for reference
-                all_frame_results[i] = frame_result
-        
-        # If we have frame analyses, combine them using the analyzer's method
-        if frame_analyses:
-            combined_analysis = analyzer.combine_frame_analyses(frame_analyses)
-            text_results = format_analysis_results(combined_analysis)
+        # Replace with your OpenWeatherMap API key
+        api_key = os.getenv('OPENWEATHER_API_KEY', '')
+        if not api_key:
+            return {
+                "temperature": 22.5,
+                "humidity": 65,
+                "wind_speed": 12,
+                "precipitation": 0.2,
+                "conditions": "Partly Cloudy",
+                "alerts": []
+            }
             
-            # Extract the frame with the most antennas
-            best_frame_image = None
-            if combined_analysis.get('best_frame_info'):
-                best_frame_idx = combined_analysis['best_frame_info'].get('frame_index')
-                if best_frame_idx is not None and best_frame_idx < len(frame_analyses):
-                    # Find the actual frame in the results
-                    frame_data = None
-                    for i, fr in enumerate(results.get("detections", [])):
-                        if i == best_frame_idx:
-                            frame_data = fr
-                            break
-                    
-                    if frame_data:
-                        # Extract the frame from the video
-                        cap = cv2.VideoCapture(video)
-                        cap.set(cv2.CAP_PROP_POS_FRAMES, frame_data["frame_idx"])
-                        ret, frame = cap.read()
-                        cap.release()
-                        
-                        if ret:
-                            # Get detections and draw them
-                            detections = frame_data.get("detections", [])
-                            analysis = frame_data.get("analysis", {})
-                            
-                            # Draw detection results
-                            best_frame_image = visualizer.draw_tower_analysis(frame, detections, analysis)
-        else:
-            text_results = "No towers detected in the video"
-            best_frame_image = None
+        url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={api_key}&units=metric"
+        response = requests.get(url)
+        data = response.json()
         
-        return text_results, output_file, best_frame_image
+        return {
+            "temperature": data["main"]["temp"],
+            "humidity": data["main"]["humidity"],
+            "wind_speed": data["wind"]["speed"],
+            "precipitation": data.get("rain", {}).get("1h", 0),
+            "conditions": data["weather"][0]["description"],
+            "alerts": []
+        }
     except Exception as e:
-        print(f"Error processing video: {e}")
-        traceback.print_exc()
-        return f"Error processing video: {str(e)}", None, None
+        print(f"Weather API error: {str(e)}")
+        return None
 
-def format_analysis_results(results):
-    """Format the analysis results into a readable report"""
-    if not results:
-        return "No analysis results available"
-        
-    report = "# Tower Analysis Report\n\n"
-    report += "## Tower Classification\n"
-    report += f"- Type: {results['tower_type']}\n"
+def analyze_weather_impacts(weather, tower):
+    impacts = []
     
-    report += "\n## Tower Measurements\n"
-    report += f"- Estimated Height: {results['height_estimate']:.1f} feet\n"
+    # Check temperature impacts
+    if weather["temperature"] > 35:
+        impacts.append({
+            "severity": "warning",
+            "icon": "🌡️",
+            "message": "High temperature may affect equipment performance"
+        })
     
-    report += "\n## Equipment Analysis\n"
-    report += f"- Total Antennas: {results['total_antennas']}\n"
+    # Check wind impacts
+    if weather["wind_speed"] > 20:
+        impacts.append({
+            "severity": "danger",
+            "icon": "💨",
+            "message": "High winds may cause tower instability"
+        })
     
-    # Add antenna counts by type
-    if 'antenna_counts' in results:
-        for antenna_type, count in results['antenna_counts'].items():
-            if count > 0:
-                report += f"- {antenna_type}: {count}\n"
+    # Check precipitation impacts
+    if weather["precipitation"] > 0.5:
+        impacts.append({
+            "severity": "warning",
+            "icon": "🌧️",
+            "message": "Heavy rain may increase corrosion risk"
+        })
     
-    # Categorize insights for better readability
-    if 'insights' in results and results['insights']:
-        tower_insights = []
-        antenna_insights = []
-        coverage_insights = []
-        other_insights = []
-        
-        # Categorize insights
-        for insight in results['insights']:
-            if "tower identified" in insight.lower() or "tower structure" in insight.lower():
-                tower_insights.append(insight)
-            elif "antenna" in insight.lower():
-                antenna_insights.append(insight)
-            elif "coverage" in insight.lower() or "connectivity" in insight.lower():
-                coverage_insights.append(insight)
-            else:
-                other_insights.append(insight)
-        
-        # Add insights by category
-        report += "\n## Insights\n"
-        
-        if tower_insights:
-            report += "\n### Tower Structure\n"
-            for insight in tower_insights:
-                report += f"- {insight}\n"
-                
-        if antenna_insights:
-            report += "\n### Antenna Configuration\n"
-            for insight in antenna_insights:
-                report += f"- {insight}\n"
-                
-        if coverage_insights:
-            report += "\n### Coverage Analysis\n"
-            for insight in coverage_insights:
-                report += f"- {insight}\n"
-                
-        if other_insights:
-            report += "\n### Additional Observations\n"
-            for insight in other_insights:
-                report += f"- {insight}\n"
+    # Check humidity impacts
+    if weather["humidity"] > 80:
+        impacts.append({
+            "severity": "warning",
+            "icon": "💧",
+            "message": "High humidity may affect signal quality"
+        })
     
-    return report
+    return impacts
 
-def detect_objects(image, confidence=0.4):
-    """Detect objects in the image with specified confidence"""
-    if image is None:
-        return None, []
-        
-    # Set confidence threshold
-    detector.confidence_threshold = confidence
-    
-    # Detect objects
-    detections, result_image = detector.detect(image, draw=True)
-    
-    return result_image, detections
+# Custom CSS for immersive UI
+custom_css = """
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', -apple-system, system-ui, sans-serif;
+}
 
-def tower_detection_demo():
-    """Create and launch the Gradio interface"""
+.gradio-container {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    min-height: 100vh !important;
+    background: #0a0c10 !important;
+    color: #ffffff !important;
+    background-image: linear-gradient(45deg, #0a0c10 0%, #1a1f2c 100%) !important;
+}
+
+.main-container {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 100vh !important;
+    background: transparent !important;
+}
+
+.header {
+    background: rgba(26, 31, 44, 0.8) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    padding: 2rem !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 100 !important;
+    text-align: center !important;
+}
+
+.header h1 {
+    font-size: 2.5rem !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    margin: 0 !important;
+    letter-spacing: 2px !important;
+    text-transform: uppercase !important;
+    background: linear-gradient(120deg, #64b5f6, #1976d2) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    animation: glow 2s ease-in-out infinite alternate !important;
+}
+
+@keyframes glow {
+    from {
+        text-shadow: 0 0 10px rgba(100, 181, 246, 0.5),
+                     0 0 20px rgba(100, 181, 246, 0.3);
+    }
+    to {
+        text-shadow: 0 0 20px rgba(100, 181, 246, 0.7),
+                     0 0 30px rgba(100, 181, 246, 0.5);
+    }
+}
+
+.header p {
+    color: rgba(255, 255, 255, 0.7) !important;
+    margin-top: 1rem !important;
+    font-size: 1rem !important;
+    font-weight: 300 !important;
+    letter-spacing: 1px !important;
+}
+
+.content {
+    flex: 1 !important;
+    padding: 3rem 2rem !important;
+    max-width: 1400px !important;
+    margin: 0 auto !important;
+    width: 100% !important;
+    position: relative !important;
+}
+
+.content::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: radial-gradient(circle at center, rgba(100, 181, 246, 0.1) 0%, transparent 70%) !important;
+    pointer-events: none !important;
+}
+
+.tabs {
+    display: flex !important;
+    gap: 1rem !important;
+    margin-bottom: 3rem !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    padding-bottom: 1rem !important;
+    justify-content: center !important;
+}
+
+.tab-button {
+    padding: 1rem 2rem !important;
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0.5rem !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.tab-button::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: rgba(100, 181, 246, 0.1) !important;
+    transform: scaleX(0) !important;
+    transform-origin: left !important;
+    transition: transform 0.3s ease !important;
+}
+
+.tab-button:hover::before {
+    transform: scaleX(1) !important;
+}
+
+.tab-button.active {
+    color: #64b5f6 !important;
+    background: rgba(100, 181, 246, 0.1) !important;
+}
+
+.upload-container {
+    background: rgba(26, 31, 44, 0.6) !important;
+    border-radius: 1rem !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    padding: 3rem !important;
+    margin-bottom: 3rem !important;
+    text-align: center !important;
+    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+}
+
+.upload-container:hover {
+    transform: translateY(-5px) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
+}
+
+.upload-area {
+    border: 2px dashed rgba(100, 181, 246, 0.3) !important;
+    border-radius: 1rem !important;
+    padding: 4rem !important;
+    text-align: center !important;
+    background: rgba(100, 181, 246, 0.05) !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+}
+
+.upload-area:hover {
+    border-color: #64b5f6 !important;
+    background: rgba(100, 181, 246, 0.1) !important;
+}
+
+.upload-icon {
+    width: 48px !important;
+    height: 48px !important;
+    margin-bottom: 1rem !important;
+    color: #64748b !important;
+}
+
+.upload-text {
+    color: #64748b !important;
+    font-size: 0.875rem !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.settings-container {
+    background: rgba(26, 31, 44, 0.6) !important;
+    border-radius: 1rem !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    padding: 2rem !important;
+    margin-bottom: 3rem !important;
+}
+
+.settings-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    margin-bottom: 1.5rem !important;
+}
+
+.settings-title {
+    font-size: 1.25rem !important;
+    font-weight: 600 !important;
+    color: #ffffff !important;
+    margin-bottom: 2rem !important;
+    text-align: center !important;
+}
+
+.settings-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)) !important;
+    gap: 2rem !important;
+}
+
+.slider-container {
+    background: rgba(100, 181, 246, 0.05) !important;
+    padding: 1.5rem !important;
+    border-radius: 0.75rem !important;
+    border: 1px solid rgba(100, 181, 246, 0.1) !important;
+}
+
+.slider-label {
+    font-size: 0.875rem !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    margin-bottom: 1rem !important;
+}
+
+.analyze-button {
+    background: linear-gradient(120deg, #64b5f6, #1976d2) !important;
+    color: #ffffff !important;
+    padding: 1rem 2rem !important;
+    border-radius: 0.75rem !important;
+    font-weight: 600 !important;
+    font-size: 1rem !important;
+    border: none !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    width: 100% !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.analyze-button::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.2), transparent) !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.6s ease !important;
+}
+
+.analyze-button:hover::before {
+    transform: translateX(100%) !important;
+}
+
+.results-container {
+    background: rgba(26, 31, 44, 0.6) !important;
+    border-radius: 1rem !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    padding: 2rem !important;
+    animation: fadeIn 0.5s ease !important;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.results-header {
+    margin-bottom: 1.5rem !important;
+    padding-bottom: 1rem !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.results-title {
+    font-size: 1.5rem !important;
+    font-weight: 600 !important;
+    color: #ffffff !important;
+    margin-bottom: 2rem !important;
+    text-align: center !important;
+}
+
+.results-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
+    gap: 2rem !important;
+}
+
+.metric-card {
+    background: rgba(100, 181, 246, 0.05) !important;
+    padding: 2rem !important;
+    border-radius: 1rem !important;
+    text-align: center !important;
+    border: 1px solid rgba(100, 181, 246, 0.1) !important;
+    transition: transform 0.3s ease !important;
+}
+
+.metric-card:hover {
+    transform: translateY(-5px) !important;
+}
+
+.metric-value {
+    font-size: 2rem !important;
+    font-weight: 700 !important;
+    color: #64b5f6 !important;
+    margin-bottom: 1rem !important;
+    background: linear-gradient(120deg, #64b5f6, #1976d2) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+}
+
+.metric-label {
+    font-size: 1rem !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    font-weight: 500 !important;
+}
+"""
+
+# Tower data
+tower_data = {
+    "towers": [
+        {
+            "id": "VZW001",
+            "name": "Downtown 5G Ultra",
+            "lat": 37.7749,
+            "lon": -122.4194,
+            "type": "5G Ultra Wideband",
+            "status": "Operational",
+            "signal_strength": 95,
+            "network_load": 78,
+            "coverage_radius": 2000,
+            "height": 45,
+            "installation_date": "2022-03-15",
+            "last_maintenance": "2023-11-01"
+        },
+        {
+            "id": "VZW002",
+            "name": "Harbor View 5G",
+            "lat": 37.8079,
+            "lon": -122.4012,
+            "type": "5G Edge",
+            "status": "Warning",
+            "signal_strength": 82,
+            "network_load": 92,
+            "coverage_radius": 5000,
+            "height": 38,
+            "installation_date": "2021-08-22",
+            "last_maintenance": "2023-09-15"
+        },
+        {
+            "id": "VZW003",
+            "name": "Heights Tower",
+            "lat": 37.7575,
+            "lon": -122.4376,
+            "type": "5G Ultra Wideband",
+            "status": "Critical",
+            "signal_strength": 65,
+            "network_load": 45,
+            "coverage_radius": 2000,
+            "height": 52,
+            "installation_date": "2022-01-10",
+            "last_maintenance": "2023-10-05"
+        }
+    ]
+}
+
+def create_map():
+    # Create base map with dark theme
+    m = folium.Map(
+        location=[37.7749, -122.4194],
+        zoom_start=12,
+        tiles='CartoDB dark_matter'
+    )
     
-    # Create Gradio interface with compatible parameters
-    with gr.Blocks(title="Verizon Tower Analysis") as app:
-        gr.Markdown("# Verizon Cell Tower Analysis System")
-        gr.Markdown("Upload an image or video of a cell tower for analysis.")
-        
-        with gr.Tab("Image Analysis"):
-            with gr.Row():
-                with gr.Column():
-                    image_input = gr.Image(type="numpy")
-                    confidence_slider = gr.Slider(
-                        minimum=0.1, 
-                        maximum=0.9, 
-                        value=0.4, 
-                        step=0.1, 
-                        label="Detection Confidence"
-                    )
-                    image_button = gr.Button("Analyze Image")
-                with gr.Column():
-                    image_output = gr.Markdown()
-                    result_image = gr.Image(label="Detection Results")
+    # Add custom JavaScript for click events
+    m.get_root().html.add_child(folium.Element("""
+        <script>
+        function onTowerClick(towerId) {
+            // Show tower details
+            document.getElementById('towerDetails').style.display = 'flex';
             
-            image_button.click(
-                fn=process_image,
-                inputs=[image_input, confidence_slider],
-                outputs=[image_output, result_image]
-            )
-        
-        with gr.Tab("Video Analysis"):
-            with gr.Row():
-                with gr.Column(scale=1):
-                    video_input = gr.Video()
-                    video_confidence = gr.Slider(
-                        minimum=0.1, 
-                        maximum=0.9, 
-                        value=0.4, 
-                        step=0.1, 
-                        label="Detection Confidence"
-                    )
-                    video_button = gr.Button("Analyze Video")
-                with gr.Column(scale=2):
-                    video_output = gr.Markdown()
-                    with gr.Row():
-                        with gr.Column():
-                            processed_video = gr.Video(label="Processed Video")
-                        with gr.Column():
-                            best_frame_image = gr.Image(label="Best Frame (Most Antennas)")
-            
-            video_button.click(
-                fn=process_video,
-                inputs=[video_input, video_confidence],
-                outputs=[video_output, processed_video, best_frame_image]
-            )
-            
-        with gr.Tab("Object Detection"):
-            with gr.Row():
-                with gr.Column():
-                    detect_input = gr.Image(type="numpy")
-                    detect_confidence = gr.Slider(
-                        minimum=0.1, 
-                        maximum=0.9, 
-                        value=0.4, 
-                        step=0.1, 
-                        label="Detection Confidence"
-                    )
-                    detect_button = gr.Button("Detect Objects")
-                with gr.Column():
-                    detect_output = gr.Image(label="Detection Results")
-                    objects_json = gr.JSON(label="Detected Objects")
-            
-            detect_button.click(
-                fn=detect_objects,
-                inputs=[detect_input, detect_confidence],
-                outputs=[detect_output, objects_json]
-            )
-        
-        # Load examples from directories
-        examples_dir = base_dir / "examples" if (base_dir / "examples").exists() else None
-        videos_dir = base_dir / "videos" if (base_dir / "videos").exists() else None
-        
-        # Check for examples in examples directory
-        image_examples = []
-        video_examples = []
-        
-        if examples_dir and examples_dir.exists():
-            print(f"Checking for examples in: {examples_dir}")
-            image_examples.extend([str(f) for f in examples_dir.glob("*.jpg")])
-            image_examples.extend([str(f) for f in examples_dir.glob("*.jpeg")])
-            image_examples.extend([str(f) for f in examples_dir.glob("*.png")])
-            video_examples.extend([str(f) for f in examples_dir.glob("*.mp4")])
-            video_examples.extend([str(f) for f in examples_dir.glob("*.avi")])
-            video_examples.extend([str(f) for f in examples_dir.glob("*.mov")])
-        
-        # Check for videos in videos directory
-        if videos_dir and videos_dir.exists():
-            print(f"Checking for videos in: {videos_dir}")
-            video_files = list(videos_dir.glob("*.mp4"))
-            video_files.extend(videos_dir.glob("*.avi"))
-            video_files.extend(videos_dir.glob("*.mov"))
-            
-            if video_files:
-                print(f"Found {len(video_files)} videos in videos directory")
-                video_examples.extend([str(f) for f in video_files])
-            else:
-                print("No video files found in videos directory")
+            // Trigger data updates
+            updateSensorData(towerId);
+            updateWeatherData(towerId);
+        }
+        </script>
+    """))
+    
+    for tower in tower_data["towers"]:
+        # Style based on status
+        if tower["status"] == "Operational":
+            color = "#4CAF50"  # Green
+        elif tower["status"] == "Warning":
+            color = "#FFC107"  # Yellow
         else:
-            print(f"Videos directory not found: {videos_dir}")
-            
-        print(f"Total image examples: {len(image_examples)}")
-        print(f"Total video examples: {len(video_examples)}")
-            
-        # Add examples to the interface
-        if image_examples:
-            with gr.Accordion("Image Examples", open=False):
-                gr.Examples(
-                    examples=image_examples,
-                    inputs=image_input
-                )
+            color = "#F44336"  # Red
         
-        if video_examples:
-            with gr.Accordion("Video Examples", open=False):
-                gr.Examples(
-                    examples=video_examples,
-                    inputs=video_input
-                )
+        # Add coverage circle
+        folium.Circle(
+            location=[tower["lat"], tower["lon"]],
+            radius=tower["coverage_radius"],
+            color=color,
+            fill=True,
+            fillColor=color,
+            fillOpacity=0.2,
+            popup=f"""
+                <div style="width:200px" class="tower-marker" data-tower-id="{tower['id']}"
+                     onclick="onTowerClick('{tower['id']}')">
+                    <h4>{tower['name']}</h4>
+                    <p>Type: {tower['type']}</p>
+                    <p>Status: {tower['status']}</p>
+                    <p>Signal: {tower['signal_strength']}%</p>
+                    <p>Load: {tower['network_load']}%</p>
+                    <button onclick="onTowerClick('{tower['id']}')"
+                            style="background: #4CAF50; color: white; border: none; 
+                                   padding: 5px 10px; border-radius: 4px; 
+                                   cursor: pointer; margin-top: 10px;">
+                        View Details
+                    </button>
+                </div>
+            """
+        ).add_to(m)
+        
+        # Add tower marker
+        folium.CircleMarker(
+            location=[tower["lat"], tower["lon"]],
+            radius=6,
+            color=color,
+            fill=True,
+            fillColor=color,
+            fillOpacity=1,
+            popup=tower["name"],
+            class_name=f"tower-marker"
+        ).add_to(m)
     
-    return app
+    return m._repr_html_()
 
-def main():
-    """
-    Main function to run the application
-    """
-    print("Starting Verizon Tower Detection application...")
-    # Create and launch the interface - removed any incompatible parameters
-    app = tower_detection_demo()
-    app.launch()
-    return app
+def create_dashboard():
+    # Create the dashboard HTML with proper CSS string formatting
+    dashboard_html = f"""
+    <div class="dashboard-container">
+        <!-- Interactive Map Section -->
+        <div class="map-section" id="towerMap">
+            <h2>Tower Locations</h2>
+            <div class="map-container" id="mapContainer">
+                {create_map()}
+            </div>
+        </div>
 
-if __name__ == "__main__":
-    main() 
+        <!-- Hidden sections that appear on tower selection -->
+        <div class="dashboard-details" id="towerDetails" style="display: none;">
+            <!-- Sensor Data Section -->
+            <div class="sensor-section">
+                <h2>Sensor Readings</h2>
+                <div class="sensor-grid">
+                    <div class="sensor-card">
+                        <h3>Vibration Sensor</h3>
+                        <div class="sensor-value" id="vibrationValue">--</div>
+                        <div class="sensor-chart" id="vibrationChart"></div>
+                    </div>
+                    <div class="sensor-card">
+                        <h3>Tilt Sensor</h3>
+                        <div class="sensor-value" id="tiltValue">--</div>
+                        <div class="sensor-chart" id="tiltChart"></div>
+                    </div>
+                    <div class="sensor-card">
+                        <h3>Strain Sensor</h3>
+                        <div class="sensor-value" id="strainValue">--</div>
+                        <div class="sensor-chart" id="strainChart"></div>
+                    </div>
+                    <div class="sensor-card">
+                        <h3>Corrosion Sensor</h3>
+                        <div class="sensor-value" id="corrosionValue">--</div>
+                        <div class="sensor-chart" id="corrosionChart"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Weather Analysis Section -->
+            <div class="weather-section">
+                <h2>Weather Impact Analysis</h2>
+                <div class="weather-content">
+                    <div class="current-weather">
+                        <div class="weather-main">
+                            <div class="weather-temp" id="weatherTemp">--°C</div>
+                            <div class="weather-condition" id="weatherCondition">--</div>
+                        </div>
+                        <div class="weather-details">
+                            <div class="weather-detail">
+                                <span class="label">Humidity</span>
+                                <span class="value" id="weatherHumidity">--%</span>
+                            </div>
+                            <div class="weather-detail">
+                                <span class="label">Wind Speed</span>
+                                <span class="value" id="weatherWind">-- km/h</span>
+                            </div>
+                            <div class="weather-detail">
+                                <span class="label">Precipitation</span>
+                                <span class="value" id="weatherPrecip">-- mm</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="weather-impact">
+                        <h3>Impact Analysis</h3>
+                        <div class="impact-list" id="weatherImpacts"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .dashboard-container {{
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            padding: 2rem;
+            background: var(--main-bg);
+            min-height: 100vh;
+        }}
+
+        .map-section {{
+            background: rgba(26, 31, 44, 0.6);
+            border-radius: 1rem;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            height: 60vh;
+        }}
+
+        .dashboard-details {{
+            display: flex;
+            gap: 2rem;
+            margin-top: 2rem;
+        }}
+
+        .sensor-section, .weather-section {{
+            flex: 1;
+            background: rgba(26, 31, 44, 0.6);
+            border-radius: 1rem;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }}
+
+        .sensor-grid {{
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }}
+
+        .sensor-card {{
+            background: rgba(100, 181, 246, 0.05);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            border: 1px solid rgba(100, 181, 246, 0.1);
+        }}
+
+        .sensor-value {{
+            font-size: 2rem;
+            font-weight: 700;
+            color: #64b5f6;
+            margin: 1rem 0;
+            background: linear-gradient(120deg, #64b5f6, #1976d2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }}
+
+        .weather-content {{
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            margin-top: 1.5rem;
+        }}
+
+        .current-weather {{
+            background: rgba(100, 181, 246, 0.05);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            border: 1px solid rgba(100, 181, 246, 0.1);
+        }}
+
+        .weather-main {{
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }}
+
+        .weather-temp {{
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(120deg, #64b5f6, #1976d2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }}
+
+        .weather-details {{
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            text-align: center;
+        }}
+
+        .weather-detail .label {{
+            display: block;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }}
+
+        .weather-detail .value {{
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #ffffff;
+        }}
+
+        .impact-list {{
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }}
+
+        .impact-item {{
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: rgba(100, 181, 246, 0.05);
+            border-radius: 0.5rem;
+            border: 1px solid rgba(100, 181, 246, 0.1);
+        }}
+
+        .impact-item.warning {{
+            border-color: rgba(255, 193, 7, 0.2);
+            background: rgba(255, 193, 7, 0.05);
+        }}
+
+        .impact-item.danger {{
+            border-color: rgba(244, 67, 54, 0.2);
+            background: rgba(244, 67, 54, 0.05);
+        }}
+
+        h2 {{
+            color: #ffffff;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }}
+
+        h3 {{
+            color: #ffffff;
+            font-size: 1.25rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }}
+
+        .map-container {{
+            height: 100%;
+            width: 100%;
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }}
+    </style>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {{
+        function onTowerClick(towerId) {{
+            document.getElementById('towerDetails').style.display = 'flex';
+            updateSensorData(towerId);
+            updateWeatherData(towerId);
+        }}
+
+        function updateSensorData(towerId) {{
+            const sensorIds = ['vibration', 'tilt', 'strain', 'corrosion'];
+            sensorIds.forEach(sensor => {{
+                const value = Math.random() * 100;
+                document.getElementById(`${{sensor}}Value`).textContent = value.toFixed(1);
+            }});
+        }}
+
+        function updateWeatherData(towerId) {{
+            const tower = tower_data.towers.find(t => t.id === towerId);
+            if (!tower) return;
+
+            const weather = get_weather_data(tower.lat, tower.lon);
+            
+            document.getElementById('weatherTemp').textContent = `${{weather.temperature}}°C`;
+            document.getElementById('weatherCondition').textContent = weather.conditions;
+            document.getElementById('weatherHumidity').textContent = `${{weather.humidity}}%`;
+            document.getElementById('weatherWind').textContent = `${{weather.wind_speed}} km/h`;
+            document.getElementById('weatherPrecip').textContent = `${{weather.precipitation}} mm`;
+
+            const impacts = analyze_weather_impacts(weather, tower);
+            const impactList = document.getElementById('weatherImpacts');
+            impactList.innerHTML = impacts.map(impact => 
+                `<div class="impact-item ${{impact.severity}}">
+                    <span class="impact-icon">${{impact.icon}}</span>
+                    <span class="impact-text">${{impact.message}}</span>
+                </div>`
+            ).join('');
+        }}
+
+        const markers = document.querySelectorAll('.tower-marker');
+        markers.forEach(marker => {{
+            marker.addEventListener('click', function() {{
+                onTowerClick(this.dataset.towerId);
+            }});
+        }});
+    }});
+    </script>
+    """
+    
+    return dashboard_html
+
+def process_image(image, confidence=0.05, min_size=10, iou_thresh=0.2, enhanced=True):
+    if image is None:
+        return None, "No image provided", "Please upload an image"
+    
+    try:
+        # Convert to PIL Image if needed
+        if isinstance(image, np.ndarray):
+            image = Image.fromarray(image)
+        if image.mode != 'RGB':
+            image = image.convert('RGB')
+        
+        # Convert to numpy for OpenCV operations
+        image_np = np.array(image)
+        output_image = image_np.copy()
+        
+        try:
+            # Tower Classification
+            transform = transforms.Compose([
+                transforms.Resize((224, 224)),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+            ])
+            
+            img_tensor = transform(image).unsqueeze(0).to(device)
+            with torch.no_grad():
+                outputs = tower_model(img_tensor)
+                probabilities = torch.nn.functional.softmax(outputs[0], dim=0)
+            
+            # Get the best prediction
+            best_idx = torch.argmax(probabilities).item()
+            best_prob = float(probabilities[best_idx])
+            tower_prediction = f"{class_names[best_idx]} ({best_prob:.1%} confidence)"
+        except Exception as e:
+            tower_prediction = "Tower classification unavailable"
+        
+        try:
+            # Antenna Detection with enhanced parameters
+            if antenna_model is not None:
+                all_boxes = []
+                
+                if enhanced:
+                    # Multiple detection passes with different scales
+                    scales = [0.8, 1.0, 1.2]
+                    for scale in scales:
+                        # Resize image for different scales
+                        h, w = image_np.shape[:2]
+                        new_h, new_w = int(h * scale), int(w * scale)
+                        scaled_img = cv2.resize(image_np, (new_w, new_h))
+                        
+                        # Run detection
+                        results = antenna_model(
+                            scaled_img,
+                            conf=0.01,  # Very low initial confidence
+                            iou=iou_thresh,
+                            agnostic_nms=True,
+                            max_det=100  # Increased max detections
+                        )
+                        
+                        # Scale boxes back to original size
+                        for box in results[0].boxes:
+                            x1, y1, x2, y2 = map(int, (box.xyxy[0] / scale).tolist())
+                            conf = float(box.conf[0])
+                            cls = int(box.cls[0])
+                            all_boxes.append((x1, y1, x2, y2, conf, cls))
+                else:
+                    # Single pass detection
+                    results = antenna_model(
+                        image_np,
+                        conf=0.01,
+                        iou=iou_thresh,
+                        agnostic_nms=True,
+                        max_det=100
+                    )
+                    for box in results[0].boxes:
+                        x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
+                        conf = float(box.conf[0])
+                        cls = int(box.cls[0])
+                        all_boxes.append((x1, y1, x2, y2, conf, cls))
+                
+                # Filter and sort boxes
+                filtered_boxes = []
+                for x1, y1, x2, y2, conf, cls in all_boxes:
+                    width = x2 - x1
+                    height = y2 - y1
+                    if conf >= confidence and width >= min_size and height >= min_size:
+                        filtered_boxes.append((x1, y1, x2, y2, conf, cls))
+                
+                filtered_boxes.sort(key=lambda x: x[4], reverse=True)
+                
+                # Draw boxes on image
+                for x1, y1, x2, y2, conf, cls in filtered_boxes:
+                    # Draw white outline for contrast
+                    cv2.rectangle(
+                        output_image,
+                        (x1-2, y1-2),
+                        (x2+2, y2+2),
+                        (255, 255, 255),
+                        4
+                    )
+                    # Draw colored box based on confidence
+                    color = (0, 255, 0) if conf >= 0.5 else (0, 165, 255) if conf >= 0.3 else (0, 0, 255)
+                    cv2.rectangle(
+                        output_image,
+                        (x1, y1),
+                        (x2, y2),
+                        color,
+                        2
+                    )
+                    
+                    # Add confidence score
+                    label = f"{conf:.2f}"
+                    (w, h), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)
+                    cv2.rectangle(output_image, (x1, y1-20), (x1+w+10, y1), color, -1)
+                    cv2.putText(
+                        output_image,
+                        label,
+                        (x1+5, y1-5),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.5,
+                        (255, 255, 255),
+                        2
+                    )
+                
+                # Create detection summary
+                antenna_count = len(filtered_boxes)
+                if antenna_count > 0:
+                    avg_conf = sum(box[4] for box in filtered_boxes) / antenna_count
+                    high_conf = sum(1 for box in filtered_boxes if box[4] >= 0.5)
+                    med_conf = sum(1 for box in filtered_boxes if 0.3 <= box[4] < 0.5)
+                    low_conf = sum(1 for box in filtered_boxes if box[4] < 0.3)
+                    
+                    antenna_summary = f"""Detected {antenna_count} antennas:
+- High confidence (≥0.5): {high_conf}
+- Medium confidence (0.3-0.5): {med_conf}
+- Low confidence (<0.3): {low_conf}
+Average confidence: {avg_conf:.2f}"""
+                else:
+                    antenna_summary = "No antennas detected with current settings"
+            else:
+                antenna_summary = "Antenna detection unavailable"
+                output_image = image_np.copy()
+        except Exception as e:
+            antenna_summary = f"Error in antenna detection: {str(e)}"
+            output_image = image_np.copy()
+        
+        return output_image, tower_prediction, antenna_summary
+    except Exception as e:
+        return None, f"Error processing image: {str(e)}", "Processing failed"
+
+def process_video(video_path):
+    if video_path is None:
+        return None
+    
+    try:
+        # Process video frames
+        cap = cv2.VideoCapture(video_path)
+        fps = int(cap.get(cv2.CAP_PROP_FPS))
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        
+        # Create output video writer
+        output_path = "temp_output.mp4"
+        out = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (width, height))
+        
+        frame_count = 0
+        total_antennas = 0
+        
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if not ret:
+                break
+            
+            # Process frame
+            processed_frame, _, _ = process_image(frame)
+            out.write(processed_frame)
+            
+            frame_count += 1
+        
+        cap.release()
+        out.release()
+        
+        return output_path
+    except Exception as e:
+        print(f"Error processing video: {str(e)}")
+        return None
+
+# Load models
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print("Loading models...")
+
+try:
+    tower_model = TowerClassifier().to(device)
+    tower_model.load_state_dict(torch.load("tower_classifier.pth", map_location=device))
+    tower_model.eval()
+    print("Tower classifier loaded successfully")
+except Exception as e:
+    print(f"Error loading tower classifier: {str(e)}")
+    tower_model = None
+
+try:
+    model_path = os.path.join('UTD-Models-Videos', 'runs', 'detect', 'train4', 'weights', 'best.pt')
+    antenna_model = YOLO(model_path)
+    print("Antenna detector loaded successfully")
+except Exception as e:
+    print(f"Error loading antenna detector: {str(e)}")
+    antenna_model = None
+
+class_names = ['Guyed Tower', 'Lattice Tower', 'Monopole Tower', 'Water Tank Tower']
+
+# Initialize models
+antenna_detector = AntennaDetector()
+tower_classifier = TowerClassifier()
+
+# Create Gradio interface
+with gr.Blocks(css=custom_css) as iface:
+    with gr.Column(elem_classes="main-container"):
+        # Header
+        with gr.Column(elem_classes="header"):
+            gr.Markdown("# Cell Tower Analyzer")
+            gr.Markdown("Advanced AI-powered tower classification and antenna detection")
+        
+        # Main content
+        with gr.Column(elem_classes="content"):
+            # Tabs
+            with gr.Tabs() as tabs:
+                with gr.Tab("📊 Dashboard", elem_classes="tab"):
+                    dashboard_html = gr.HTML(create_dashboard())
+                
+                with gr.Tab("📷 Image Analysis", elem_classes="tab"):
+                    with gr.Column():
+                        # Upload Section
+                        with gr.Column(elem_classes="upload-container"):
+                            gr.Markdown("### Upload Image")
+                            image_input = gr.Image(type="numpy", label="")
+                        
+                        # Settings Section
+                        with gr.Column(elem_classes="settings-container"):
+                            with gr.Row(elem_classes="settings-header"):
+                                gr.Markdown("### Detection Settings", elem_classes="settings-title")
+                            
+                            with gr.Column(elem_classes="settings-grid"):
+                                confidence = gr.Slider(
+                                    minimum=0.0, maximum=1.0, value=0.05, step=0.01,
+                                    label="Detection Sensitivity",
+                                    elem_classes="slider-container"
+                                )
+                                min_size = gr.Slider(
+                                    minimum=5, maximum=100, value=10, step=5,
+                                    label="Min Size (px)",
+                                    elem_classes="slider-container"
+                                )
+                                iou_thresh = gr.Slider(
+                                    minimum=0.0, maximum=1.0, value=0.2, step=0.05,
+                                    label="Overlap Threshold",
+                                    elem_classes="slider-container"
+                                )
+                                enhanced = gr.Checkbox(
+                                    value=True,
+                                    label="Enhanced Detection",
+                                    info="Use multiple detection passes"
+                                )
+                        
+                        # Analyze Button
+                        detect_btn = gr.Button(
+                            "Analyze Image",
+                            elem_classes="analyze-button"
+                        )
+                        
+                        # Results Section
+                        with gr.Column(elem_classes="results-container", visible=False) as results_container:
+                            with gr.Column(elem_classes="results-header"):
+                                gr.Markdown("### Analysis Results", elem_classes="results-title")
+                            
+                            with gr.Column(elem_classes="results-grid"):
+                                image_output = gr.Image(type="numpy", label="Detected Antennas")
+                                with gr.Column(elem_classes="metric-card"):
+                                    tower_output = gr.Textbox(label="Tower Classification")
+                                with gr.Column(elem_classes="metric-card"):
+                                    antenna_output = gr.Textbox(label="Detection Summary")
+                
+                with gr.Tab("🎥 Video Analysis", elem_classes="tab"):
+                    with gr.Column():
+                        # Upload Section
+                        with gr.Column(elem_classes="upload-container"):
+                            gr.Markdown("### Upload Video")
+                            video_input = gr.Video(label="")
+                        
+                        # Process Button
+                        process_btn = gr.Button(
+                            "Process Video",
+                            elem_classes="analyze-button"
+                        )
+                        
+                        # Video Output
+                        video_output = gr.Video(label="Processed Video")
+
+    # Event handlers
+    detect_btn.click(
+        fn=process_image,
+        inputs=[image_input, confidence, min_size, iou_thresh, enhanced],
+        outputs=[image_output, tower_output, antenna_output],
+        show_progress=True,
+    ).then(
+        fn=lambda: gr.update(visible=True),
+        outputs=[results_container]
+    )
+
+    process_btn.click(
+        fn=process_video,
+        inputs=[video_input],
+        outputs=[video_output],
+        show_progress=True
+    )
+
+# Launch the interface
+iface.launch(server_port=8501) 
