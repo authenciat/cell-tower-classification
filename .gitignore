@@ -64,4 +64,7 @@ Thumbs.db
 *.log
 
 # Temp files
-temp_* 
+temp_*
+
+# Environment variables
+.env.* 
