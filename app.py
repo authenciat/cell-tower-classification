@@ -66,7 +66,10 @@ try:
     print("Initialized visualizer")
     
     video_processor = VideoProcessor(detector, analyzer, visualizer)
-    print("Initialized video processor")
+    # Configure for faster processing
+    video_processor.frame_skip = 15
+    video_processor.max_frames = 10
+    print("Initialized video processor with fast settings")
 except Exception as e:
     print(f"Error initializing models: {e}")
     traceback.print_exc()
@@ -97,19 +100,16 @@ def process_image(image, confidence=0.4):
 def process_video(video, confidence=0.4):
     """Process the uploaded video for tower detection"""
     if video is None:
-        return "Please upload a video", None, None
+        return "Please upload a video", None
     
     # Adjust confidence threshold
     detector.confidence_threshold = confidence
-    
-    # Create temporary output file
-    output_file = "output_video.mp4"
     
     # Process the video
     try:
         results = video_processor.process_video(
             video_path=video,
-            output_path=output_file,
+            output_path=None,  # No output video needed
             analyze=True
         )
         
@@ -158,11 +158,11 @@ def process_video(video, confidence=0.4):
             text_results = "No towers detected in the video"
             best_frame_image = None
         
-        return text_results, output_file, best_frame_image
+        return text_results, best_frame_image
     except Exception as e:
         print(f"Error processing video: {e}")
         traceback.print_exc()
-        return f"Error processing video: {str(e)}", None, None
+        return f"Error processing video: {str(e)}", None
 
 def format_analysis_results(results):
     """Format the analysis results into a readable report"""
@@ -285,16 +285,12 @@ def tower_detection_demo():
                     video_button = gr.Button("Analyze Video")
                 with gr.Column(scale=2):
                     video_output = gr.Markdown()
-                    with gr.Row():
-                        with gr.Column():
-                            processed_video = gr.Video(label="Processed Video")
-                        with gr.Column():
-                            best_frame_image = gr.Image(label="Best Frame (Most Antennas)")
+                    best_frame_image = gr.Image(label="Best Frame (Most Antennas)")
             
             video_button.click(
                 fn=process_video,
                 inputs=[video_input, video_confidence],
-                outputs=[video_output, processed_video, best_frame_image]
+                outputs=[video_output, best_frame_image]
             )
             
         with gr.Tab("Object Detection"):

@@ -315,8 +315,8 @@ class TowerDetector:
     
     def process_video(self, 
                      video_path: str, 
-                     output_path: Optional[str] = None,
-                     frame_skip: int = 10,
+                     output_path: Optional[str] = None,  # Kept for backward compatibility
+                     frame_skip: int = 30,
                      max_frames: Optional[int] = None,
                      output_fps: int = 15) -> Dict[str, Any]:
         """
@@ -324,10 +324,10 @@ class TowerDetector:
         
         Args:
             video_path: Path to input video
-            output_path: Path to save output video (None to skip saving)
+            output_path: Path to save output video (not used anymore, kept for backward compatibility)
             frame_skip: Process every Nth frame
             max_frames: Maximum number of frames to process
-            output_fps: FPS for output video
+            output_fps: FPS for output video (not used anymore)
             
         Returns:
             Dictionary with processing results
@@ -347,12 +347,7 @@ class TowerDetector:
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         fps = cap.get(cv2.CAP_PROP_FPS)
         
-        # Setup video writer if output path is specified
-        output_writer = None
-        if output_path is not None:
-            os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
-            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-            output_writer = cv2.VideoWriter(output_path, fourcc, output_fps, (width, height))
+        # No longer setting up video writer
         
         # Process video
         frame_count = 0
@@ -377,9 +372,7 @@ class TowerDetector:
             # Filter for tower detections
             tower_detections = self.filter_tower_detections(detections)
             
-            # Save the processed frame
-            if output_writer is not None:
-                output_writer.write(result_frame)
+            # No longer saving the processed frame to video
                 
             # Update counters
             processed_frames += 1
@@ -401,13 +394,11 @@ class TowerDetector:
         
         # Release resources
         cap.release()
-        if output_writer is not None:
-            output_writer.release()
             
         # Compile results
         results = {
             'video_path': video_path,
-            'output_path': output_path,
+            'output_path': None,  # Set to None as we're not creating output video
             'total_frames': total_frames,
             'processed_frames': processed_frames,
             'tower_frames': tower_frames,

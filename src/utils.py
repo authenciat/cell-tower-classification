@@ -31,8 +31,8 @@ class VideoProcessor:
         self.visualizer = visualizer
         
         # Video processing settings
-        self.frame_skip = 5  # Process every 5th frame by default
-        self.max_frames = 25  # Reduced from 50 to 25 frames max
+        self.frame_skip = 15  # Process every 15th frame (increased from 5)
+        self.max_frames = 10  # Reduced from 25 to 10 frames max
         self.output_fps = 10  # Default output FPS
         
     def extract_frames(self, 
@@ -129,7 +129,7 @@ class VideoProcessor:
         
         Args:
             video_path: Path to the video file
-            output_path: Path to save the processed video
+            output_path: Path to save the processed video (not used anymore, kept for backward compatibility)
             save_frames: Whether to save extracted frames
             frames_dir: Directory to save frames (if save_frames is True)
             analyze: Whether to perform tower analysis
@@ -161,12 +161,8 @@ class VideoProcessor:
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         
-        # Initialize video writer if output path is provided
-        writer = None
-        if output_path:
-            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-            writer = cv2.VideoWriter(output_path, fourcc, self.output_fps, (width, height))
-            
+        # No longer initializing video writer
+        
         # Process frames
         results = {
             "video_path": video_path,
@@ -240,10 +236,8 @@ class VideoProcessor:
                         )
                     else:
                         vis_frame = self.visualizer.draw_detections(frame, detections)
-                        
-                    # Save to video if writer is available
-                    if writer:
-                        writer.write(vis_frame)
+                    
+                    # No longer saving to video
                         
                     # Save frame if requested
                     if save_frames:
@@ -256,8 +250,6 @@ class VideoProcessor:
                 
         # Clean up
         cap.release()
-        if writer:
-            writer.release()
             
         return results
         
