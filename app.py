@@ -561,17 +561,109 @@ def create_map():
         tiles='CartoDB positron'  # Light theme map
     )
     
-    # Sample tower data - replace with your actual data
+    # Enhanced sample tower data with additional attributes
     towers = [
-        {"lat": 37.7749, "lon": -122.4194, "status": "active"},  # San Francisco
-        {"lat": 40.7128, "lon": -74.0060, "status": "active"},   # New York
-        {"lat": 34.0522, "lon": -118.2437, "status": "active"},  # Los Angeles
-        {"lat": 41.8781, "lon": -87.6298, "status": "active"},   # Chicago
-        # Add more tower locations as needed
+        {
+            "id": "T1001",
+            "lat": 37.7749, 
+            "lon": -122.4194, 
+            "status": "active",
+            "location": "San Francisco, CA",
+            "pressure": "101.3 kPa",
+            "temperature": "24.5°C",
+            "sound_level": "65 dB",
+            "azimuth": "275°",
+            "tilt": "2.5°",
+            "height": "150 ft",
+            "last_maintenance": "2024-03-15"
+        },
+        {
+            "id": "T1002",
+            "lat": 40.7128, 
+            "lon": -74.0060, 
+            "status": "active",
+            "location": "New York, NY",
+            "pressure": "102.1 kPa",
+            "temperature": "22.0°C",
+            "sound_level": "72 dB",
+            "azimuth": "180°",
+            "tilt": "1.8°",
+            "height": "165 ft",
+            "last_maintenance": "2024-02-28"
+        },
+        {
+            "id": "T1003",
+            "lat": 34.0522, 
+            "lon": -118.2437, 
+            "status": "active",
+            "location": "Los Angeles, CA",
+            "pressure": "100.8 kPa",
+            "temperature": "26.8°C",
+            "sound_level": "68 dB",
+            "azimuth": "210°",
+            "tilt": "2.2°",
+            "height": "145 ft",
+            "last_maintenance": "2024-04-05"
+        },
+        {
+            "id": "T1004",
+            "lat": 41.8781, 
+            "lon": -87.6298, 
+            "status": "active",
+            "location": "Chicago, IL",
+            "pressure": "101.5 kPa",
+            "temperature": "19.5°C",
+            "sound_level": "63 dB",
+            "azimuth": "305°",
+            "tilt": "2.0°",
+            "height": "155 ft",
+            "last_maintenance": "2024-03-10"
+        }
     ]
     
     # Add towers to the map
     for tower in towers:
+        # Try to get weather data for each tower
+        weather_data = get_weather_data(tower["lat"], tower["lon"])
+        
+        # Create detailed popup content
+        popup_content = f"""
+        <div style="font-family: Arial, sans-serif; min-width: 250px;">
+            <h3 style="background-color: #FF0000; color: white; padding: 8px; margin: 0; border-radius: 5px 5px 0 0;">TOWER #{tower['id']}</h3>
+            <div style="padding: 10px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 5px 5px;">
+                <p><strong>Location:</strong> {tower['location']}</p>
+                <p><strong>Pressure:</strong> {tower['pressure']}</p>
+                <p><strong>Temperature:</strong> {tower['temperature']}</p>
+                <p><strong>Sound Level:</strong> {tower['sound_level']}</p>
+                <p><strong>Azimuth:</strong> {tower['azimuth']}</p>
+                <p><strong>Tilt:</strong> {tower['tilt']}</p>
+                <p><strong>Height:</strong> {tower['height']}</p>
+                <p><strong>Last maintenance:</strong> {tower['last_maintenance']}</p>
+                
+                <h4 style="margin-top: 15px; border-top: 1px solid #ddd; padding-top: 10px;">Current Weather Conditions:</h4>
+        """
+        
+        # Add weather information if available
+        if weather_data:
+            popup_content += f"""
+                <p>Temperature: {weather_data['temperature']}°C</p>
+                <p>Conditions: {weather_data['conditions']}</p>
+                <p>Humidity: {weather_data['humidity']}%</p>
+                <p>Wind Speed: {weather_data['wind_speed']} m/s</p>
+            """
+        else:
+            popup_content += "<p>Weather data unavailable</p>"
+            
+        # Close the popup HTML
+        popup_content += """
+                </div>
+            </div>
+        """
+        
+        # Create the popup with the detailed content
+        popup = folium.Popup(popup_content, max_width=300)
+        
+        # Add the marker with the popup
         folium.CircleMarker(
             location=[tower["lat"], tower["lon"]],
             radius=8,
@@ -579,7 +671,8 @@ def create_map():
             fill=True,
             fillColor='red',
             fillOpacity=0.7,
-            popup=f"Tower Status: {tower['status']}"
+            popup=popup,
+            tooltip=f"Tower #{tower['id']} - Click for details"
         ).add_to(m)
         
         # Add coverage area
