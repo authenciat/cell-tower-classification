@@ -82,6 +82,11 @@ def analyze_weather_impacts(weather, tower):
 
 # Custom CSS for immersive UI
 custom_css = """
+:root {
+    --verizon-red: #FF0000;
+    --background-grey: #f5f5f5;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -95,317 +100,407 @@ custom_css = """
     width: 100vw !important;
     max-width: 100vw !important;
     min-height: 100vh !important;
-    background: #0a0c10 !important;
-    color: #ffffff !important;
-    background-image: linear-gradient(45deg, #0a0c10 0%, #1a1f2c 100%) !important;
+    background: var(--background-grey) !important;
 }
 
 .main-container {
     display: flex !important;
     flex-direction: column !important;
+    align-items: center !important;
+    padding: 2rem !important;
+    gap: 2rem !important;
+    position: relative !important;
     min-height: 100vh !important;
-    background: transparent !important;
+    background: var(--background-grey) !important;
 }
 
 .header {
-    background: rgba(26, 31, 44, 0.8) !important;
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-    padding: 2rem !important;
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 100 !important;
-    text-align: center !important;
-}
-
-.header h1 {
-    font-size: 2.5rem !important;
-    font-weight: 700 !important;
-    color: #ffffff !important;
-    margin: 0 !important;
-    letter-spacing: 2px !important;
-    text-transform: uppercase !important;
-    background: linear-gradient(120deg, #64b5f6, #1976d2) !important;
-    -webkit-background-clip: text !important;
-    -webkit-text-fill-color: transparent !important;
-    animation: glow 2s ease-in-out infinite alternate !important;
-}
-
-@keyframes glow {
-    from {
-        text-shadow: 0 0 10px rgba(100, 181, 246, 0.5),
-                     0 0 20px rgba(100, 181, 246, 0.3);
-    }
-    to {
-        text-shadow: 0 0 20px rgba(100, 181, 246, 0.7),
-                     0 0 30px rgba(100, 181, 246, 0.5);
-    }
-}
-
-.header p {
-    color: rgba(255, 255, 255, 0.7) !important;
-    margin-top: 1rem !important;
-    font-size: 1rem !important;
-    font-weight: 300 !important;
-    letter-spacing: 1px !important;
-}
-
-.content {
-    flex: 1 !important;
-    padding: 3rem 2rem !important;
-    max-width: 1400px !important;
-    margin: 0 auto !important;
     width: 100% !important;
-    position: relative !important;
-}
-
-.content::before {
-    content: '' !important;
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    background: radial-gradient(circle at center, rgba(100, 181, 246, 0.1) 0%, transparent 70%) !important;
-    pointer-events: none !important;
-}
-
-.tabs {
-    display: flex !important;
-    gap: 1rem !important;
-    margin-bottom: 3rem !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-    padding-bottom: 1rem !important;
-    justify-content: center !important;
-}
-
-.tab-button {
-    padding: 1rem 2rem !important;
-    font-size: 1rem !important;
-    font-weight: 500 !important;
-    color: rgba(255, 255, 255, 0.7) !important;
-    background: transparent !important;
-    border: none !important;
-    border-radius: 0.5rem !important;
-    cursor: pointer !important;
-    transition: all 0.3s ease !important;
-    position: relative !important;
+    text-align: center !important;
+    margin-bottom: 2rem !important;
+    background: #ffffff !important;
+    padding: 1.5rem 2rem !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
     overflow: hidden !important;
 }
 
-.tab-button::before {
-    content: '' !important;
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    background: rgba(100, 181, 246, 0.1) !important;
-    transform: scaleX(0) !important;
-    transform-origin: left !important;
-    transition: transform 0.3s ease !important;
+.header .logo {
+    width: 900px !important;
+    height: 180px !important;
+    margin: 0 auto 1rem auto !important;
+    display: block !important;
+    background: transparent !important;
 }
 
-.tab-button:hover::before {
-    transform: scaleX(1) !important;
+.header .logo.hide-label .wrap.svelte-1gqxwij > .label-wrap {
+    display: none !important;
 }
 
-.tab-button.active {
-    color: #64b5f6 !important;
-    background: rgba(100, 181, 246, 0.1) !important;
+.header .logo img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    object-position: center !important;
 }
 
-.upload-container {
-    background: rgba(26, 31, 44, 0.6) !important;
-    border-radius: 1rem !important;
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    padding: 3rem !important;
-    margin-bottom: 3rem !important;
+.header .title {
+    font-size: 1.2rem !important;
+    font-weight: 500 !important;
+    color: #000000 !important;
+    margin-top: 0.5rem !important;
+    text-transform: uppercase !important;
     text-align: center !important;
-    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+    letter-spacing: 1px !important;
 }
 
-.upload-container:hover {
-    transform: translateY(-5px) !important;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
+.map-container {
+    background: #ffffff !important;
+    width: 100% !important;
+    height: 500px !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    margin-bottom: 2rem !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+    padding: 1rem !important;
 }
 
-.upload-area {
-    border: 2px dashed rgba(100, 181, 246, 0.3) !important;
-    border-radius: 1rem !important;
-    padding: 4rem !important;
-    text-align: center !important;
-    background: rgba(100, 181, 246, 0.05) !important;
-    cursor: pointer !important;
-    transition: all 0.3s ease !important;
+.upload-section {
+    position: fixed !important;
+    left: 2rem !important;
+    bottom: 2rem !important;
+    z-index: 1000 !important;
 }
 
-.upload-area:hover {
-    border-color: #64b5f6 !important;
-    background: rgba(100, 181, 246, 0.1) !important;
+/* Style the file upload component to look like a button */
+.upload-section .upload-button > .wrap {
+    background: #E6E6E6 !important;
+    border: none !important;
+    border-radius: 4px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
 }
 
-.upload-icon {
-    width: 48px !important;
-    height: 48px !important;
-    margin-bottom: 1rem !important;
-    color: #64748b !important;
+.upload-section .upload-button > .wrap > .label-wrap {
+    display: none !important;
 }
 
-.upload-text {
-    color: #64748b !important;
+.upload-section .upload-button > .wrap > .file-preview {
+    display: none !important;
+}
+
+.upload-section .upload-button > .wrap > .file-upload {
+    background: transparent !important;
+    border: none !important;
+    padding: 0.75rem 1.5rem !important;
+    color: var(--verizon-red) !important;
+    font-weight: 500 !important;
     font-size: 0.875rem !important;
+    text-transform: uppercase !important;
+    cursor: pointer !important;
+}
+
+.upload-section .upload-button > .wrap > .file-upload:hover {
+    background: #D9D9D9 !important;
+}
+
+.results-content {
+    position: fixed !important;
+    right: 2rem !important;
+    bottom: 2rem !important;
+    width: 400px !important;
+    background: #ffffff !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    overflow: hidden !important;
+    z-index: 1000 !important;
+}
+
+.results-content > .wrap {
+    padding: 1rem !important;
+}
+
+.results-content .label-wrap {
+    color: var(--verizon-red) !important;
+    font-weight: 500 !important;
     margin-bottom: 0.5rem !important;
 }
 
-.settings-container {
-    background: rgba(26, 31, 44, 0.6) !important;
-    border-radius: 1rem !important;
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+/* Hide unnecessary elements */
+.footer {
+    display: none !important;
+}
+
+.gradio-container > div:not(.main-container) {
+    display: none !important;
+}
+
+/* Tab Styles */
+.tabs {
+    margin-top: 1rem !important;
+    background: var(--background-grey) !important;
+}
+
+.tab {
     padding: 2rem !important;
-    margin-bottom: 3rem !important;
+    background: var(--background-grey) !important;
 }
 
-.settings-header {
+.upload-container {
+    max-width: 800px !important;
+    margin: 0 auto !important;
+    padding: 2rem !important;
+    background: #ffffff !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+}
+
+.results-section {
     display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    margin-bottom: 1.5rem !important;
-}
-
-.settings-title {
-    font-size: 1.25rem !important;
-    font-weight: 600 !important;
-    color: #ffffff !important;
-    margin-bottom: 2rem !important;
-    text-align: center !important;
-}
-
-.settings-grid {
-    display: grid !important;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)) !important;
-    gap: 2rem !important;
-}
-
-.slider-container {
-    background: rgba(100, 181, 246, 0.05) !important;
+    flex-direction: column !important;
+    gap: 1rem !important;
+    background: #ffffff !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
     padding: 1.5rem !important;
-    border-radius: 0.75rem !important;
-    border: 1px solid rgba(100, 181, 246, 0.1) !important;
-}
-
-.slider-label {
-    font-size: 0.875rem !important;
-    color: rgba(255, 255, 255, 0.7) !important;
-    margin-bottom: 1rem !important;
-}
-
-.analyze-button {
-    background: linear-gradient(120deg, #64b5f6, #1976d2) !important;
-    color: #ffffff !important;
-    padding: 1rem 2rem !important;
-    border-radius: 0.75rem !important;
-    font-weight: 600 !important;
-    font-size: 1rem !important;
-    border: none !important;
-    cursor: pointer !important;
-    transition: all 0.3s ease !important;
-    width: 100% !important;
-    text-transform: uppercase !important;
-    letter-spacing: 1px !important;
-    position: relative !important;
+    height: calc(100% - 120px) !important;
     overflow: hidden !important;
 }
 
-.analyze-button::before {
-    content: '' !important;
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
+.results-section > .wrap {
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1rem !important;
+}
+
+.results-section img {
+    width: 100% !important;
+    height: 300px !important;
+    object-fit: contain !important;
+    border-radius: 4px !important;
+    background: var(--background-grey) !important;
+}
+
+.results-section .label-wrap {
+    font-weight: 500 !important;
+    color: var(--verizon-red) !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.results-section textarea {
+    height: 120px !important;
+    resize: none !important;
+    font-family: monospace !important;
+    font-size: 0.9rem !important;
+    line-height: 1.4 !important;
+    padding: 1rem !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    border-radius: 4px !important;
+    background: var(--background-grey) !important;
+}
+
+/* Tab navigation styles */
+.tabs > .tab-nav {
+    background: #ffffff !important;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.1) !important;
+    padding: 0 2rem !important;
+    border-radius: 8px 8px 0 0 !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+}
+
+.tabs > .tab-nav > button {
+    color: #000000 !important;
+    font-weight: 500 !important;
+    padding: 1rem 2rem !important;
+    margin: 0 !important;
+    border: none !important;
+    border-bottom: 2px solid transparent !important;
+    margin-bottom: -2px !important;
+    background: transparent !important;
+    transition: all 0.3s ease !important;
+}
+
+.tabs > .tab-nav > button:hover {
+    color: #000000 !important;
+    border-bottom-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+.tabs > .tab-nav > button.selected {
+    color: #000000 !important;
+    border-bottom-color: #000000 !important;
+    font-weight: 600 !important;
+}
+
+.analysis-tab {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 2rem !important;
+    height: calc(100vh - 200px) !important;
+    padding: 2rem !important;
+}
+
+.model-viewer {
+    background: #ffffff !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+    height: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.model-viewer-placeholder {
+    color: #666666 !important;
+    font-size: 1.2rem !important;
+    text-align: center !important;
+}
+
+.analysis-container {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1rem !important;
+    height: 100% !important;
+    overflow: hidden !important;
+}
+
+.upload-container {
+    background: #ffffff !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+    padding: 1.5rem !important;
+}
+
+.section-title {
+    font-size: 1.5rem !important;
+    font-weight: 500 !important;
+    color: #000000 !important;
+    margin-bottom: 1rem !important;
+    text-align: left !important;
+}
+
+.analysis-title {
+    font-size: 1.2rem !important;
+    font-weight: 500 !important;
+    color: #000000 !important;
+    margin: 1rem 0 !important;
+    text-align: left !important;
+}
+
+.analysis-text {
+    font-size: 1rem !important;
+    color: #000000 !important;
+    line-height: 1.5 !important;
+    font-family: monospace !important;
+}
+
+.analysis-text p {
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.analysis-text * {
+    color: #000000 !important;
+}
+
+.results-section .analysis-text {
+    color: #000000 !important;
+}
+
+.results-section .analysis-text p {
+    color: #000000 !important;
+}
+
+.model-preview {
     width: 100% !important;
     height: 100% !important;
-    background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.2), transparent) !important;
-    transform: translateX(-100%) !important;
-    transition: transform 0.6s ease !important;
+    object-fit: contain !important;
 }
 
-.analyze-button:hover::before {
-    transform: translateX(100%) !important;
+.result-image {
+    width: 100% !important;
+    max-height: 400px !important;
+    object-fit: contain !important;
 }
 
-.results-container {
-    background: rgba(26, 31, 44, 0.6) !important;
-    border-radius: 1rem !important;
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+.file-input > .wrap {
+    border: 2px dashed rgba(0, 0, 0, 0.2) !important;
+    border-radius: 8px !important;
     padding: 2rem !important;
-    animation: fadeIn 0.5s ease !important;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.results-header {
-    margin-bottom: 1.5rem !important;
-    padding-bottom: 1rem !important;
-    border-bottom: 1px solid #e2e8f0 !important;
-}
-
-.results-title {
-    font-size: 1.5rem !important;
-    font-weight: 600 !important;
-    color: #ffffff !important;
-    margin-bottom: 2rem !important;
     text-align: center !important;
+    background: transparent !important;
 }
 
-.results-grid {
-    display: grid !important;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
-    gap: 2rem !important;
+.file-input > .wrap:hover {
+    border-color: #000000 !important;
 }
 
-.metric-card {
-    background: rgba(100, 181, 246, 0.05) !important;
-    padding: 2rem !important;
-    border-radius: 1rem !important;
-    text-align: center !important;
-    border: 1px solid rgba(100, 181, 246, 0.1) !important;
-    transition: transform 0.3s ease !important;
+.file-input .file-preview {
+    display: none !important;
 }
 
-.metric-card:hover {
-    transform: translateY(-5px) !important;
-}
-
-.metric-value {
-    font-size: 2rem !important;
-    font-weight: 700 !important;
-    color: #64b5f6 !important;
-    margin-bottom: 1rem !important;
-    background: linear-gradient(120deg, #64b5f6, #1976d2) !important;
-    -webkit-background-clip: text !important;
-    -webkit-text-fill-color: transparent !important;
-}
-
-.metric-label {
+.file-input .file-upload {
+    color: #000000 !important;
     font-size: 1rem !important;
-    color: rgba(255, 255, 255, 0.7) !important;
-    font-weight: 500 !important;
+}
+
+/* Hide the label and file information */
+.file-input .label-wrap,
+.file-input .file-preview,
+.file-input .file-metadata {
+    display: none !important;
+}
+
+/* Adjust the upload container visibility transition */
+.upload-container {
+    transition: opacity 0.3s ease !important;
+}
+
+.upload-container[style*="display: none"] {
+    opacity: 0 !important;
+}
+
+/* Style the results section */
+.results-section {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1rem !important;
+}
+
+.results-section img {
+    border-radius: 4px !important;
+    background: var(--background-grey) !important;
+}
+
+/* Update all text colors to black */
+.title, 
+.section-title,
+.analysis-title,
+.analysis-text,
+.analysis-text p,
+.analysis-text *,
+.results-section .analysis-text,
+.results-section .analysis-text p,
+.file-input .file-upload,
+.model-viewer-placeholder,
+h2, h3, p {
+    color: #000000 !important;
+}
+
+/* Make sure the file upload text is also black */
+.file-input > .wrap {
+    border: 2px dashed rgba(0, 0, 0, 0.2) !important;
+}
+
+.file-input > .wrap:hover {
+    border-color: #000000 !important;
+}
+
+.file-input .file-upload {
+    color: #000000 !important;
 }
 """
 
@@ -458,74 +553,46 @@ tower_data = {
 }
 
 def create_map():
-    # Create base map with dark theme
+    """Create the coverage map with tower locations"""
+    # Create a base map centered on the US
     m = folium.Map(
-        location=[37.7749, -122.4194],
-        zoom_start=12,
-        tiles='CartoDB dark_matter'
+        location=[39.8283, -98.5795],  # Center of the US
+        zoom_start=4,
+        tiles='CartoDB positron'  # Light theme map
     )
     
-    # Add custom JavaScript for click events
-    m.get_root().html.add_child(folium.Element("""
-        <script>
-        function onTowerClick(towerId) {
-            // Show tower details
-            document.getElementById('towerDetails').style.display = 'flex';
-            
-            // Trigger data updates
-            updateSensorData(towerId);
-            updateWeatherData(towerId);
-        }
-        </script>
-    """))
+    # Sample tower data - replace with your actual data
+    towers = [
+        {"lat": 37.7749, "lon": -122.4194, "status": "active"},  # San Francisco
+        {"lat": 40.7128, "lon": -74.0060, "status": "active"},   # New York
+        {"lat": 34.0522, "lon": -118.2437, "status": "active"},  # Los Angeles
+        {"lat": 41.8781, "lon": -87.6298, "status": "active"},   # Chicago
+        # Add more tower locations as needed
+    ]
     
-    for tower in tower_data["towers"]:
-        # Style based on status
-        if tower["status"] == "Operational":
-            color = "#4CAF50"  # Green
-        elif tower["status"] == "Warning":
-            color = "#FFC107"  # Yellow
-        else:
-            color = "#F44336"  # Red
-        
-        # Add coverage circle
-        folium.Circle(
-            location=[tower["lat"], tower["lon"]],
-            radius=tower["coverage_radius"],
-            color=color,
-            fill=True,
-            fillColor=color,
-            fillOpacity=0.2,
-            popup=f"""
-                <div style="width:200px" class="tower-marker" data-tower-id="{tower['id']}"
-                     onclick="onTowerClick('{tower['id']}')">
-                    <h4>{tower['name']}</h4>
-                    <p>Type: {tower['type']}</p>
-                    <p>Status: {tower['status']}</p>
-                    <p>Signal: {tower['signal_strength']}%</p>
-                    <p>Load: {tower['network_load']}%</p>
-                    <button onclick="onTowerClick('{tower['id']}')"
-                            style="background: #4CAF50; color: white; border: none; 
-                                   padding: 5px 10px; border-radius: 4px; 
-                                   cursor: pointer; margin-top: 10px;">
-                        View Details
-                    </button>
-                </div>
-            """
-        ).add_to(m)
-        
-        # Add tower marker
+    # Add towers to the map
+    for tower in towers:
         folium.CircleMarker(
             location=[tower["lat"], tower["lon"]],
-            radius=6,
-            color=color,
+            radius=8,
+            color='red',
             fill=True,
-            fillColor=color,
-            fillOpacity=1,
-            popup=tower["name"],
-            class_name=f"tower-marker"
+            fillColor='red',
+            fillOpacity=0.7,
+            popup=f"Tower Status: {tower['status']}"
+        ).add_to(m)
+        
+        # Add coverage area
+        folium.Circle(
+            location=[tower["lat"], tower["lon"]],
+            radius=20000,  # 20km radius
+            color='red',
+            fill=True,
+            fillColor='red',
+            fillOpacity=0.1
         ).add_to(m)
     
+    # Save map to HTML string
     return m._repr_html_()
 
 def create_dashboard():
@@ -608,17 +675,18 @@ def create_dashboard():
             flex-direction: column;
             gap: 2rem;
             padding: 2rem;
-            background: var(--main-bg);
+            background: #ffffff;
             min-height: 100vh;
         }}
 
         .map-section {{
-            background: rgba(26, 31, 44, 0.6);
+            background: #ffffff;
             border-radius: 1rem;
             padding: 2rem;
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(0, 0, 0, 0.1);
             height: 60vh;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }}
 
         .dashboard-details {{
@@ -629,11 +697,12 @@ def create_dashboard():
 
         .sensor-section, .weather-section {{
             flex: 1;
-            background: rgba(26, 31, 44, 0.6);
+            background: #ffffff;
             border-radius: 1rem;
             padding: 2rem;
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }}
 
         .sensor-grid {{
@@ -644,20 +713,17 @@ def create_dashboard():
         }}
 
         .sensor-card {{
-            background: rgba(100, 181, 246, 0.05);
+            background: rgba(255, 0, 0, 0.05);
             border-radius: 0.75rem;
             padding: 1.5rem;
-            border: 1px solid rgba(100, 181, 246, 0.1);
+            border: 1px solid rgba(255, 0, 0, 0.1);
         }}
 
         .sensor-value {{
             font-size: 2rem;
             font-weight: 700;
-            color: #64b5f6;
+            color: #ff0000;
             margin: 1rem 0;
-            background: linear-gradient(120deg, #64b5f6, #1976d2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
         }}
 
         .weather-content {{
@@ -668,10 +734,10 @@ def create_dashboard():
         }}
 
         .current-weather {{
-            background: rgba(100, 181, 246, 0.05);
+            background: rgba(255, 0, 0, 0.05);
             border-radius: 0.75rem;
             padding: 1.5rem;
-            border: 1px solid rgba(100, 181, 246, 0.1);
+            border: 1px solid rgba(255, 0, 0, 0.1);
         }}
 
         .weather-main {{
@@ -682,9 +748,7 @@ def create_dashboard():
         .weather-temp {{
             font-size: 3rem;
             font-weight: 700;
-            background: linear-gradient(120deg, #64b5f6, #1976d2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: #ff0000;
         }}
 
         .weather-details {{
@@ -696,7 +760,7 @@ def create_dashboard():
 
         .weather-detail .label {{
             display: block;
-            color: rgba(255, 255, 255, 0.7);
+            color: #666666;
             font-size: 0.875rem;
             margin-bottom: 0.5rem;
         }}
@@ -704,7 +768,7 @@ def create_dashboard():
         .weather-detail .value {{
             font-size: 1.25rem;
             font-weight: 600;
-            color: #ffffff;
+            color: #333333;
         }}
 
         .impact-list {{
@@ -718,9 +782,9 @@ def create_dashboard():
             align-items: center;
             gap: 1rem;
             padding: 1rem;
-            background: rgba(100, 181, 246, 0.05);
+            background: rgba(255, 0, 0, 0.05);
             border-radius: 0.5rem;
-            border: 1px solid rgba(100, 181, 246, 0.1);
+            border: 1px solid rgba(255, 0, 0, 0.1);
         }}
 
         .impact-item.warning {{
@@ -734,14 +798,14 @@ def create_dashboard():
         }}
 
         h2 {{
-            color: #ffffff;
+            color: #333333;
             font-size: 1.5rem;
             font-weight: 600;
             margin-bottom: 1rem;
         }}
 
         h3 {{
-            color: #ffffff;
+            color: #333333;
             font-size: 1.25rem;
             font-weight: 500;
             margin-bottom: 1rem;
@@ -752,6 +816,7 @@ def create_dashboard():
             width: 100%;
             border-radius: 0.5rem;
             overflow: hidden;
+            border: 1px solid rgba(0, 0, 0, 0.1);
         }}
     </style>
 
@@ -820,139 +885,69 @@ def process_image(image, confidence=0.05, min_size=10, iou_thresh=0.2, enhanced=
         image_np = np.array(image)
         output_image = image_np.copy()
         
-        try:
-            # Tower Classification
-            transform = transforms.Compose([
-                transforms.Resize((224, 224)),
-                transforms.ToTensor(),
-                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-            ])
-            
-            img_tensor = transform(image).unsqueeze(0).to(device)
-            with torch.no_grad():
-                outputs = tower_model(img_tensor)
-                probabilities = torch.nn.functional.softmax(outputs[0], dim=0)
-            
-            # Get the best prediction
-            best_idx = torch.argmax(probabilities).item()
-            best_prob = float(probabilities[best_idx])
-            tower_prediction = f"{class_names[best_idx]} ({best_prob:.1%} confidence)"
-        except Exception as e:
-            tower_prediction = "Tower classification unavailable"
+        # Tower Classification
+        if tower_model is not None:
+            try:
+                transform = transforms.Compose([
+                    transforms.Resize((224, 224)),
+                    transforms.ToTensor(),
+                    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+                ])
+                
+                img_tensor = transform(image).unsqueeze(0).to(device)
+                with torch.no_grad():
+                    outputs = tower_model(img_tensor)
+                    probabilities = torch.nn.functional.softmax(outputs[0], dim=0)
+                
+                # Get the best prediction
+                best_idx = torch.argmax(probabilities).item()
+                best_prob = float(probabilities[best_idx])
+                tower_prediction = f"{class_names[best_idx]} ({best_prob:.1%} confidence)"
+            except Exception as e:
+                tower_prediction = f"Tower classification error: {str(e)}"
+        else:
+            tower_prediction = "Tower classification model not available"
         
-        try:
-            # Antenna Detection with enhanced parameters
-            if antenna_model is not None:
-                all_boxes = []
+        # Antenna Detection
+        if antenna_model is not None:
+            try:
+                results = antenna_model(
+                    image_np,
+                    conf=confidence,
+                    iou=iou_thresh,
+                    agnostic_nms=True,
+                    max_det=100
+                )
                 
-                if enhanced:
-                    # Multiple detection passes with different scales
-                    scales = [0.8, 1.0, 1.2]
-                    for scale in scales:
-                        # Resize image for different scales
-                        h, w = image_np.shape[:2]
-                        new_h, new_w = int(h * scale), int(w * scale)
-                        scaled_img = cv2.resize(image_np, (new_w, new_h))
-                        
-                        # Run detection
-                        results = antenna_model(
-                            scaled_img,
-                            conf=0.01,  # Very low initial confidence
-                            iou=iou_thresh,
-                            agnostic_nms=True,
-                            max_det=100  # Increased max detections
-                        )
-                        
-                        # Scale boxes back to original size
-                        for box in results[0].boxes:
-                            x1, y1, x2, y2 = map(int, (box.xyxy[0] / scale).tolist())
-                            conf = float(box.conf[0])
-                            cls = int(box.cls[0])
-                            all_boxes.append((x1, y1, x2, y2, conf, cls))
-                else:
-                    # Single pass detection
-                    results = antenna_model(
-                        image_np,
-                        conf=0.01,
-                        iou=iou_thresh,
-                        agnostic_nms=True,
-                        max_det=100
-                    )
-                    for box in results[0].boxes:
-                        x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
-                        conf = float(box.conf[0])
-                        cls = int(box.cls[0])
-                        all_boxes.append((x1, y1, x2, y2, conf, cls))
-                
-                # Filter and sort boxes
-                filtered_boxes = []
-                for x1, y1, x2, y2, conf, cls in all_boxes:
+                boxes = []
+                for box in results[0].boxes:
+                    x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
+                    conf = float(box.conf[0])
+                    cls = int(box.cls[0])
                     width = x2 - x1
                     height = y2 - y1
-                    if conf >= confidence and width >= min_size and height >= min_size:
-                        filtered_boxes.append((x1, y1, x2, y2, conf, cls))
+                    if width >= min_size and height >= min_size:
+                        boxes.append((x1, y1, x2, y2, conf, cls))
                 
-                filtered_boxes.sort(key=lambda x: x[4], reverse=True)
+                # Draw boxes
+                for x1, y1, x2, y2, conf, cls in boxes:
+                    color = (0, 255, 0) if conf >= 0.5 else (0, 165, 255)
+                    cv2.rectangle(output_image, (x1, y1), (x2, y2), color, 2)
                 
-                # Draw boxes on image
-                for x1, y1, x2, y2, conf, cls in filtered_boxes:
-                    # Draw white outline for contrast
-                    cv2.rectangle(
-                        output_image,
-                        (x1-2, y1-2),
-                        (x2+2, y2+2),
-                        (255, 255, 255),
-                        4
-                    )
-                    # Draw colored box based on confidence
-                    color = (0, 255, 0) if conf >= 0.5 else (0, 165, 255) if conf >= 0.3 else (0, 0, 255)
-                    cv2.rectangle(
-                        output_image,
-                        (x1, y1),
-                        (x2, y2),
-                        color,
-                        2
-                    )
-                    
-                    # Add confidence score
-                    label = f"{conf:.2f}"
-                    (w, h), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)
-                    cv2.rectangle(output_image, (x1, y1-20), (x1+w+10, y1), color, -1)
-                    cv2.putText(
-                        output_image,
-                        label,
-                        (x1+5, y1-5),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        0.5,
-                        (255, 255, 255),
-                        2
-                    )
-                
-                # Create detection summary
-                antenna_count = len(filtered_boxes)
+                antenna_count = len(boxes)
                 if antenna_count > 0:
-                    avg_conf = sum(box[4] for box in filtered_boxes) / antenna_count
-                    high_conf = sum(1 for box in filtered_boxes if box[4] >= 0.5)
-                    med_conf = sum(1 for box in filtered_boxes if 0.3 <= box[4] < 0.5)
-                    low_conf = sum(1 for box in filtered_boxes if box[4] < 0.3)
-                    
-                    antenna_summary = f"""Detected {antenna_count} antennas:
-- High confidence (≥0.5): {high_conf}
-- Medium confidence (0.3-0.5): {med_conf}
-- Low confidence (<0.3): {low_conf}
-Average confidence: {avg_conf:.2f}"""
+                    avg_conf = sum(box[4] for box in boxes) / antenna_count
+                    antenna_summary = f"Detected {antenna_count} antennas with average confidence {avg_conf:.2f}"
                 else:
-                    antenna_summary = "No antennas detected with current settings"
-            else:
-                antenna_summary = "Antenna detection unavailable"
-                output_image = image_np.copy()
-        except Exception as e:
-            antenna_summary = f"Error in antenna detection: {str(e)}"
-            output_image = image_np.copy()
+                    antenna_summary = "No antennas detected"
+            except Exception as e:
+                antenna_summary = f"Antenna detection error: {str(e)}"
+        else:
+            antenna_summary = "Antenna detection model not available"
         
         return output_image, tower_prediction, antenna_summary
     except Exception as e:
-        return None, f"Error processing image: {str(e)}", "Processing failed"
+        return image_np, f"Error processing image: {str(e)}", "Processing failed"
 
 def process_video(video_path):
     if video_path is None:
@@ -991,9 +986,34 @@ def process_video(video_path):
         print(f"Error processing video: {str(e)}")
         return None
 
+def process_file(file):
+    """Process uploaded file (image or video)"""
+    if file is None:
+        return None, "No file provided", "Please upload an image or video"
+    
+    try:
+        # For image files
+        if file.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')):
+            # Read image using PIL
+            image = Image.open(file)
+            output_image, tower_pred, antenna_sum = process_image(image)
+            return output_image, tower_pred, antenna_sum
+        # For video files
+        elif file.lower().endswith(('.mp4', '.avi', '.mov')):
+            return process_video(file)
+        else:
+            return None, "Error", "Unsupported file type. Please upload an image or video file."
+    except Exception as e:
+        return None, "Error", f"Failed to process file: {str(e)}"
+
 # Load models
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Loading models...")
+
+# Initialize models with None as fallback
+tower_model = None
+antenna_model = None
+antenna_detector = None
 
 try:
     tower_model = TowerClassifier().to(device)
@@ -1001,7 +1021,7 @@ try:
     tower_model.eval()
     print("Tower classifier loaded successfully")
 except Exception as e:
-    print(f"Error loading tower classifier: {str(e)}")
+    print(f"Warning: Tower classifier not loaded - {str(e)}")
     tower_model = None
 
 try:
@@ -1009,115 +1029,134 @@ try:
     antenna_model = YOLO(model_path)
     print("Antenna detector loaded successfully")
 except Exception as e:
-    print(f"Error loading antenna detector: {str(e)}")
+    print(f"Warning: Antenna detector not loaded - {str(e)}")
     antenna_model = None
+
+try:
+    antenna_detector = AntennaDetector()
+except Exception as e:
+    print(f"Warning: Antenna detector class not initialized - {str(e)}")
+    antenna_detector = None
 
 class_names = ['Guyed Tower', 'Lattice Tower', 'Monopole Tower', 'Water Tank Tower']
 
-# Initialize models
-antenna_detector = AntennaDetector()
-tower_classifier = TowerClassifier()
-
 # Create Gradio interface
 with gr.Blocks(css=custom_css) as iface:
-    with gr.Column(elem_classes="main-container"):
-        # Header
-        with gr.Column(elem_classes="header"):
-            gr.Markdown("# Cell Tower Analyzer")
-            gr.Markdown("Advanced AI-powered tower classification and antenna detection")
+    # Header (outside tabs, always visible)
+    with gr.Column(elem_classes="header"):
+        with gr.Row():
+            gr.Image(
+                value="static/images/verizon_logo.png",
+                show_label=False,
+                container=False,
+                elem_classes="logo hide-label",
+                scale=1,
+                min_width=150
+            )
+        gr.Markdown("CELL TOWER HEALTH", elem_classes="title")
+    
+    # Tabs
+    with gr.Tabs() as tabs:
+        # Map View Tab
+        with gr.Tab("Map View", elem_classes="tab"):
+            with gr.Column(elem_classes="map-container"):
+                map_html = create_map()
+                gr.HTML(map_html)
         
-        # Main content
-        with gr.Column(elem_classes="content"):
-            # Tabs
-            with gr.Tabs() as tabs:
-                with gr.Tab("📊 Dashboard", elem_classes="tab"):
-                    dashboard_html = gr.HTML(create_dashboard())
+        # Upload & Analysis Tab
+        with gr.Tab("Upload & Analysis", elem_classes="tab"):
+            with gr.Row(elem_classes="analysis-tab"):
+                # Left side - 3D Model Viewer
+                with gr.Column(elem_classes="model-viewer"):
+                    gr.Markdown("3D MODEL", elem_classes="section-title")
+                    model_viewer = gr.Image(
+                        label="",
+                        show_label=False,
+                        elem_classes="model-preview"
+                    )
                 
-                with gr.Tab("📷 Image Analysis", elem_classes="tab"):
-                    with gr.Column():
-                        # Upload Section
-                        with gr.Column(elem_classes="upload-container"):
-                            gr.Markdown("### Upload Image")
-                            image_input = gr.Image(type="numpy", label="")
-                        
-                        # Settings Section
-                        with gr.Column(elem_classes="settings-container"):
-                            with gr.Row(elem_classes="settings-header"):
-                                gr.Markdown("### Detection Settings", elem_classes="settings-title")
-                            
-                            with gr.Column(elem_classes="settings-grid"):
-                                confidence = gr.Slider(
-                                    minimum=0.0, maximum=1.0, value=0.05, step=0.01,
-                                    label="Detection Sensitivity",
-                                    elem_classes="slider-container"
-                                )
-                                min_size = gr.Slider(
-                                    minimum=5, maximum=100, value=10, step=5,
-                                    label="Min Size (px)",
-                                    elem_classes="slider-container"
-                                )
-                                iou_thresh = gr.Slider(
-                                    minimum=0.0, maximum=1.0, value=0.2, step=0.05,
-                                    label="Overlap Threshold",
-                                    elem_classes="slider-container"
-                                )
-                                enhanced = gr.Checkbox(
-                                    value=True,
-                                    label="Enhanced Detection",
-                                    info="Use multiple detection passes"
-                                )
-                        
-                        # Analyze Button
-                        detect_btn = gr.Button(
-                            "Analyze Image",
-                            elem_classes="analyze-button"
+                # Right side - Upload & Analysis
+                with gr.Column(elem_classes="analysis-container"):
+                    # Upload Section
+                    with gr.Column(elem_classes="upload-container", visible=True) as upload_section:
+                        file_input = gr.File(
+                            label="",
+                            show_label=False,
+                            file_types=["image", "video"],
+                            type="filepath",
+                            elem_classes="file-input"
                         )
-                        
-                        # Results Section
-                        with gr.Column(elem_classes="results-container", visible=False) as results_container:
-                            with gr.Column(elem_classes="results-header"):
-                                gr.Markdown("### Analysis Results", elem_classes="results-title")
-                            
-                            with gr.Column(elem_classes="results-grid"):
-                                image_output = gr.Image(type="numpy", label="Detected Antennas")
-                                with gr.Column(elem_classes="metric-card"):
-                                    tower_output = gr.Textbox(label="Tower Classification")
-                                with gr.Column(elem_classes="metric-card"):
-                                    antenna_output = gr.Textbox(label="Detection Summary")
+                    
+                    # Results Section
+                    with gr.Column(elem_classes="results-section", visible=True) as results_section:
+                        with gr.Row():
+                            result_image = gr.Image(
+                                label="",
+                                show_label=False,
+                                elem_classes="result-image"
+                            )
+                        with gr.Column():
+                            gr.Markdown("ANALYSIS:", elem_classes="analysis-title")
+                            result_text = gr.Markdown(
+                                elem_classes="analysis-text",
+                                value=""
+                            )
+        
+        def process_upload(file):
+            if file is None:
+                return {
+                    upload_section: gr.update(visible=True),
+                    result_image: None,
+                    result_text: "",
+                    model_viewer: None
+                }
+            
+            try:
+                # Process the file
+                output_image, tower_prediction, antenna_summary = process_file(file)
                 
-                with gr.Tab("🎥 Video Analysis", elem_classes="tab"):
-                    with gr.Column():
-                        # Upload Section
-                        with gr.Column(elem_classes="upload-container"):
-                            gr.Markdown("### Upload Video")
-                            video_input = gr.Video(label="")
-                        
-                        # Process Button
-                        process_btn = gr.Button(
-                            "Process Video",
-                            elem_classes="analyze-button"
-                        )
-                        
-                        # Video Output
-                        video_output = gr.Video(label="Processed Video")
-
-    # Event handlers
-    detect_btn.click(
-        fn=process_image,
-        inputs=[image_input, confidence, min_size, iou_thresh, enhanced],
-        outputs=[image_output, tower_output, antenna_output],
-        show_progress=True,
-    ).then(
-        fn=lambda: gr.update(visible=True),
-        outputs=[results_container]
-    )
-
-    process_btn.click(
-        fn=process_video,
-        inputs=[video_input],
-        outputs=[video_output],
-        show_progress=True
-    )
+                if output_image is None:
+                    return {
+                        upload_section: gr.update(visible=True),
+                        result_image: None,
+                        result_text: f"Error: {tower_prediction}\n{antenna_summary}",
+                        model_viewer: None
+                    }
+                
+                # Mock values for height, tilt, and azimuth
+                height = "150 ft"
+                tilt = "2.5°"
+                azimuth = "275°"
+                
+                analysis = f"""height, {height}
+tilt, {tilt}
+azimuth, {azimuth}"""
+                
+                return {
+                    upload_section: gr.update(visible=False),
+                    result_image: output_image,
+                    result_text: analysis,
+                    model_viewer: output_image  # For now, show the same image in 3D viewer
+                }
+            except Exception as e:
+                return {
+                    upload_section: gr.update(visible=True),
+                    result_image: None,
+                    result_text: f"Error processing file: {str(e)}",
+                    model_viewer: None
+                }
+        
+        # Event handler
+        file_input.change(
+            fn=process_upload,
+            inputs=[file_input],
+            outputs=[
+                upload_section,
+                result_image,
+                result_text,
+                model_viewer
+            ]
+        )
 
 # Launch the interface
-iface.launch(server_port=8501) 
+iface.launch() 
