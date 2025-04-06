@@ -25,10 +25,11 @@ class TowerDetector:
     """
     
     def __init__(self, 
-                 model_path: str,
+                 model_path: str = None,
                  confidence_threshold: float = 0.3,
                  nms_threshold: float = 0.45,
-                 use_cuda: bool = True):
+                 use_cuda: bool = True,
+                 model = None):
         """
         Initialize the tower detector with model parameters.
         
@@ -37,20 +38,40 @@ class TowerDetector:
             confidence_threshold: Minimum confidence for detection
             nms_threshold: Non-maximum suppression threshold
             use_cuda: Whether to use CUDA acceleration
+            model: Pre-loaded YOLO model (optional)
         """
         self.model_path = model_path
         self.confidence_threshold = confidence_threshold
         self.nms_threshold = nms_threshold
         self.use_cuda = use_cuda and self._is_cuda_available()
         
-        # Load the model
-        self._load_model()
+        # Use pre-loaded model if provided
+        if model is not None:
+            self.model = model
+            self.model_type = "yolov8"
+            print("Using pre-loaded YOLO model")
+        elif model_path is not None:
+            # Load the model from path
+            self._load_model()
+        else:
+            raise ValueError("Either model_path or model must be provided")
         
-        # Tower-related class names (based on your custom dataset)
+        # Tower-related class names
         self.tower_classes = [
             "lattice_tower", "monopole_tower", "guyed_tower", 
             "cell_antenna", "microwave_antenna", "base_station",
             "remote_radio_head", "equipment_cabinet", "dish_antenna"
+        ]
+        
+        # Foreign object classes to detect
+        self.foreign_object_classes = [
+            "bird", "bird_nest", "person", "backpack", "handbag", 
+            "umbrella", "tie", "suitcase", "frisbee", "sports_ball",
+            "kite", "baseball_bat", "baseball_glove", "skateboard",
+            "surfboard", "tennis_racket", "bottle", "wine_glass", "cup",
+            "fork", "knife", "spoon", "bowl", "banana", "apple",
+            "sandwich", "orange", "broccoli", "carrot", "hot_dog",
+            "pizza", "donut", "cake"
         ]
         
     def _is_cuda_available(self) -> bool:
@@ -126,7 +147,7 @@ class TowerDetector:
                image: np.ndarray, 
                draw: bool = True) -> Tuple[List[Dict[str, Any]], np.ndarray]:
         """
-        Detect towers and components in an image.
+        Detect towers, components, and foreign objects in an image.
         
         Args:
             image: Input image as numpy array (BGR format)
@@ -136,9 +157,28 @@ class TowerDetector:
             Tuple of (detections, output_image)
         """
         if self.model_type == "yolov8":
-            return self._detect_yolov8(image, draw)
+            detections, output_img = self._detect_yolov8(image, draw)
         else:
-            return self._detect_opencv(image, draw)
+            detections, output_img = self._detect_opencv(image, draw)
+            
+        # Classify detections as tower components or foreign objects
+        for detection in detections:
+            class_name = detection['class_name'].lower()
+            if any(tower_class in class_name for tower_class in self.tower_classes):
+                detection['object_type'] = 'tower_component'
+            elif any(foreign_class in class_name for foreign_class in self.foreign_object_classes):
+                detection['object_type'] = 'foreign_object'
+                # Use red color for foreign objects if drawing
+                if draw:
+                    x1, y1, x2, y2 = detection['bbox']
+                    cv2.rectangle(output_img, (int(x1), int(y1)), (int(x2), int(y2)), (0, 0, 255), 2)
+                    label = f"Foreign: {detection['class_name']}"
+                    y = int(y1) - 10 if int(y1) - 10 > 10 else int(y1) + 20
+                    cv2.putText(output_img, label, (int(x1), y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+            else:
+                detection['object_type'] = 'unknown'
+                
+        return detections, output_img
     
     def _detect_yolov8(self, 
                       image: np.ndarray, 
@@ -312,6 +352,18 @@ class TowerDetector:
                 tower_detections.append(detection)
         
         return tower_detections
+    
+    def filter_foreign_objects(self, detections: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Filter detections to only include foreign objects.
+        
+        Args:
+            detections: List of detection dictionaries
+            
+        Returns:
+            List of foreign object detections
+        """
+        return [det for det in detections if det.get('object_type') == 'foreign_object']
     
     def process_video(self, 
                      video_path: str, 
