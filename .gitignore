@@ -42,4 +42,26 @@ output_video.mp4
 __pycache__
 *.pyc
 *.pyd
-*.pyo 
+*.pyo
+
+# Large model files
+*.weights
+*.pt
+*.pth
+*.dylib
+*.so
+*.dll
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temp files
+temp_* 
